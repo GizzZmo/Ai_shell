@@ -134,13 +134,14 @@ def log_training_pair(prompt: str, command: str):
 
 # --- Command Execution ---
 
-def execute_command(command: str, user_prompt: str):
+def execute_command(command: str, user_prompt: str) -> int:
     """
     Executes a shell command and uses user feedback to log training data.
+    Returns the exit code of the command.
     """
     if not command:
         print(f"\n{colors.WARNING}Sorry, I couldn't translate that. Please try being more specific.{colors.RESET}")
-        return
+        return 1 # Return a non-zero exit code for failure
 
     print(f"\nI am about to execute this command: {colors.COMMAND}{command}{colors.RESET}")
     
@@ -148,10 +149,12 @@ def execute_command(command: str, user_prompt: str):
         print(f"{colors.WARNING}This command requires administrator privileges.{colors.RESET}")
 
     try:
-        confirm = input("Do you want to proceed? [y/n] ").lower().strip()
-        if confirm != 'y':
-            print("Execution cancelled.")
-            return
+        # No confirmation needed for setup commands like install/pull
+        if "install ollama" not in user_prompt and "pull" not in user_prompt:
+            confirm = input("Do you want to proceed? [y/n] ").lower().strip()
+            if confirm != 'y':
+                print("Execution cancelled.")
+                return 1
 
         print(f"\n{colors.INFO}--- Command Output ---{colors.RESET}")
         needs_shell = '|' in command or '>' in command or '<' in command or '&' in command
@@ -171,20 +174,26 @@ def execute_command(command: str, user_prompt: str):
         print(f"\n{colors.INFO}----------------------{colors.RESET}")
 
         if return_code == 0:
-            feedback = input("Was this command correct and useful? [y/n] ").lower().strip()
-            if feedback == 'y':
-                log_training_pair(user_prompt, command)
+             if "install ollama" not in user_prompt and "pull" not in user_prompt:
+                feedback = input("Was this command correct and useful? [y/n] ").lower().strip()
+                if feedback == 'y':
+                    log_training_pair(user_prompt, command)
         else:
             print(f"\n{colors.ERROR}Command finished with exit code: {return_code}{colors.RESET}")
-            print(f"{colors.WARNING}If you know the correct command, please enter it to improve the AI.{colors.RESET}")
-            correction = input("Correct command (or press Enter to skip): ").strip()
-            if correction:
-                log_training_pair(user_prompt, correction)
+            if "install ollama" not in user_prompt and "pull" not in user_prompt:
+                print(f"{colors.WARNING}If you know the correct command, please enter it to improve the AI.{colors.RESET}")
+                correction = input("Correct command (or press Enter to skip): ").strip()
+                if correction:
+                    log_training_pair(user_prompt, correction)
+        
+        return return_code
 
     except FileNotFoundError:
         print(f"\n{colors.ERROR}Error:{colors.RESET} Command not found: '{shlex.split(command)[0]}'")
+        return 1
     except Exception as e:
         print(f"\n{colors.ERROR}An unexpected error occurred:{colors.RESET} {e}")
+        return 1
 
 # --- Local LLM Setup ---
 
@@ -202,8 +211,10 @@ def check_and_setup_ollama(model_name: str) -> bool:
             install_cmd = "curl -fsSL https://ollama.com/install.sh | sh"
             print(f"You can install it by running: {colors.COMMAND}{install_cmd}{colors.RESET}")
             if input("Run this command for you? [y/n] ").lower().strip() == 'y':
-                execute_command(install_cmd, "install ollama")
-                print(f"{colors.INFO}Please restart your terminal after installation.{colors.RESET}")
+                if execute_command(install_cmd, "install ollama") == 0:
+                     print(f"{colors.INFO}Please restart your terminal after installation.{colors.RESET}")
+                else:
+                     print(f"{colors.ERROR}Ollama installation failed.{colors.RESET}")
                 return False
         # ... (macOS and Windows instructions remain the same)
         return False
@@ -212,7 +223,10 @@ def check_and_setup_ollama(model_name: str) -> bool:
         result = subprocess.run(["ollama", "list"], capture_output=True, text=True, check=True)
         if model_name not in result.stdout:
             print(f"{colors.WARNING}'{model_name}' model not found. I will download it now (this may take a while).{colors.RESET}")
-            execute_command(f"ollama pull {model_name}", f"pull {model_name} model")
+            if execute_command(f"ollama pull {model_name}", f"pull {model_name} model") != 0:
+                print(f"\n{colors.ERROR}Failed to pull '{model_name}'. Please check the model name and your internet connection.{colors.RESET}")
+                print(f"{colors.INFO}You can find available models at https://ollama.com/library{colors.RESET}")
+                return False
         else:
             print(f"{colors.SUCCESS}'{model_name}' model is available.{colors.RESET}")
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -227,7 +241,7 @@ def main():
 
     provider = ""
     while provider not in ['gemini', 'local']:
-        choice = input(f"Choose an LLM provider:\n{colors.INFO}1. Gemini{colors.RESET}\n{colors.INFO}2. Local LLM (WhiteRabbitNeo){colors.RESET}\nEnter choice (1 or 2): ").strip()
+        choice = input(f"Choose an LLM provider:\n{colors.INFO}1. Gemini{colors.RESET}\n{colors.INFO}2. Local LLM (e.g., WhiteRabbitNeo){colors.RESET}\nEnter choice (1 or 2): ").strip()
         if choice == '1': provider = 'gemini'
         elif choice == '2': provider = 'local'
 
@@ -238,15 +252,16 @@ def main():
         if not gemini_api_key:
             print(f"{colors.ERROR}No API key provided. Exiting.{colors.RESET}"); return
     else: # local
+        custom_model = input(f"Enter local model name [{local_model_name}]: ").strip()
+        if custom_model: 
+            local_model_name = custom_model
+        
         if not check_and_setup_ollama(local_model_name): return
+
         ip = input("Enter IP address [localhost]: ").strip() or "localhost"
         port = input("Enter port [11434]: ").strip() or "11434"
         local_llm_url = f"http://{ip}:{port}/api/generate"
-        custom_model = input(f"Enter model name [{local_model_name}]: ").strip()
-        if custom_model: 
-            local_model_name = custom_model
-            check_and_setup_ollama(local_model_name) # Check for the custom model too
-    
+
     print("-" * 30)
     print(f"Using provider: {colors.INFO}{provider.capitalize()}{colors.RESET}")
     print(f"Using model: {colors.INFO}{local_model_name if provider == 'local' else 'Gemini 1.5 Flash'}{colors.RESET}")
@@ -266,7 +281,9 @@ def main():
             else: # local
                 command_to_run = translate_with_local_llm(user_prompt, local_llm_url, local_model_name)
             
-            execute_command(command_to_run, user_prompt)
+            # We don't need to execute if translation fails
+            if command_to_run:
+                execute_command(command_to_run, user_prompt)
 
         except (KeyboardInterrupt, EOFError):
             break

@@ -10,8 +10,14 @@ import time
 try:
     import google.generativeai as genai
 except ImportError:
-    # Set a flag or a dummy class if the import fails
     genai = None
+
+try:
+    import torch
+    from transformers import pipeline
+except ImportError:
+    torch = None
+    pipeline = None
 
 # --- ANSI Color Codes for better terminal UI ---
 class colors:
@@ -119,6 +125,34 @@ def translate_with_local_llm(prompt: str, api_url: str, model_name: str) -> str 
         print(f"\n{colors.ERROR}Error:{colors.RESET} Failed to decode JSON response.")
         return None
 
+def translate_with_transformer(prompt: str, pipe) -> str | None:
+    """
+    Translates a prompt using a local Hugging Face transformer model.
+    """
+    if not pipe:
+        print(f"\n{colors.ERROR}Error:{colors.RESET} Transformer pipeline is not available.")
+        return None
+    try:
+        meta_prompt = build_meta_prompt(prompt)
+        sequences = pipe(
+            meta_prompt,
+            max_new_tokens=50,
+            do_sample=False,
+            num_return_sequences=1,
+        )
+        # The output is a list of dictionaries, we need to extract the generated text
+        if sequences and isinstance(sequences, list) and 'generated_text' in sequences[0]:
+             # The generated text includes the prompt, so we remove it
+            full_text = sequences[0]['generated_text']
+            command_text = full_text.replace(meta_prompt, '')
+            command = clean_llm_response(command_text)
+            return command if command else None
+        return None
+    except Exception as e:
+        print(f"\n{colors.ERROR}Error during translation with transformer:{colors.RESET} {e}")
+        return None
+
+
 # --- Data Collection for Fine-Tuning ---
 
 def log_training_pair(prompt: str, command: str):
@@ -150,7 +184,7 @@ def execute_command(command: str, user_prompt: str) -> int:
 
     try:
         # No confirmation needed for setup commands like install/pull
-        if "install ollama" not in user_prompt and "pull" not in user_prompt:
+        if "install ollama" not in user_prompt and "pull" not in user_prompt and "pip install" not in command:
             confirm = input("Do you want to proceed? [y/n] ").lower().strip()
             if confirm != 'y':
                 print("Execution cancelled.")
@@ -174,13 +208,13 @@ def execute_command(command: str, user_prompt: str) -> int:
         print(f"\n{colors.INFO}----------------------{colors.RESET}")
 
         if return_code == 0:
-             if "install ollama" not in user_prompt and "pull" not in user_prompt:
+             if "install ollama" not in user_prompt and "pull" not in user_prompt and "pip install" not in command:
                 feedback = input("Was this command correct and useful? [y/n] ").lower().strip()
                 if feedback == 'y':
                     log_training_pair(user_prompt, command)
         else:
             print(f"\n{colors.ERROR}Command finished with exit code: {return_code}{colors.RESET}")
-            if "install ollama" not in user_prompt and "pull" not in user_prompt:
+            if "install ollama" not in user_prompt and "pull" not in user_prompt and "pip install" not in command:
                 print(f"{colors.WARNING}If you know the correct command, please enter it to improve the AI.{colors.RESET}")
                 correction = input("Correct command (or press Enter to skip): ").strip()
                 if correction:
@@ -216,7 +250,6 @@ def check_and_setup_ollama(model_name: str) -> bool:
                 else:
                      print(f"{colors.ERROR}Ollama installation failed.{colors.RESET}")
                 return False
-        # ... (macOS and Windows instructions remain the same)
         return False
 
     try:
@@ -233,6 +266,22 @@ def check_and_setup_ollama(model_name: str) -> bool:
         return False
     return True
 
+def check_and_setup_transformer() -> bool:
+    """Checks if transformers and torch are installed and guides the user if not."""
+    if torch and pipeline:
+        print(f"{colors.SUCCESS}Transformers library is already installed.{colors.RESET}")
+        return True
+    
+    print(f"{colors.WARNING}The 'transformers' and 'torch' libraries are required for this option.{colors.RESET}")
+    if input("Do you want to install them now? [y/n] ").lower().strip() == 'y':
+        install_command = "pip install transformers torch"
+        print(f"Running command: {colors.COMMAND}{install_command}{colors.RESET}")
+        if execute_command(install_command, "install transformers") == 0:
+            print(f"{colors.SUCCESS}Installation successful. Please restart the script.{colors.RESET}")
+        else:
+            print(f"{colors.ERROR}Installation failed. Please install 'transformers' and 'torch' manually.{colors.RESET}")
+    return False
+
 # --- Main Application Logic ---
 
 def main():
@@ -240,19 +289,20 @@ def main():
     print(f"\n{colors.SUCCESS}Welcome to the Natural Language Shell!{colors.RESET}")
 
     provider = ""
-    while provider not in ['gemini', 'local']:
-        choice = input(f"Choose an LLM provider:\n{colors.INFO}1. Gemini{colors.RESET}\n{colors.INFO}2. Local LLM (e.g., WhiteRabbitNeo){colors.RESET}\nEnter choice (1 or 2): ").strip()
+    while provider not in ['gemini', 'local', 'transformer']:
+        choice = input(f"Choose an LLM provider:\n{colors.INFO}1. Gemini{colors.RESET}\n{colors.INFO}2. Ollama (Local Server){colors.RESET}\n{colors.INFO}3. Transformer (Local Model){colors.RESET}\nEnter choice (1, 2, or 3): ").strip()
         if choice == '1': provider = 'gemini'
         elif choice == '2': provider = 'local'
+        elif choice == '3': provider = 'transformer'
 
-    gemini_api_key, local_llm_url, local_model_name = None, None, "whiterabbitneo"
+    gemini_api_key, local_llm_url, local_model_name, transformer_pipe = None, None, "whiterabbitneo", None
 
     if provider == 'gemini':
         gemini_api_key = os.environ.get("API_KEY") or getpass.getpass("Please enter your Gemini API Key: ").strip()
         if not gemini_api_key:
             print(f"{colors.ERROR}No API key provided. Exiting.{colors.RESET}"); return
-    else: # local
-        custom_model = input(f"Enter local model name [{local_model_name}]: ").strip()
+    elif provider == 'local':
+        custom_model = input(f"Enter Ollama model name [{local_model_name}]: ").strip()
         if custom_model: 
             local_model_name = custom_model
         
@@ -261,10 +311,22 @@ def main():
         ip = input("Enter IP address [localhost]: ").strip() or "localhost"
         port = input("Enter port [11434]: ").strip() or "11434"
         local_llm_url = f"http://{ip}:{port}/api/generate"
+    elif provider == 'transformer':
+        if not check_and_setup_transformer(): return
+        model_name = "distilgpt2" # A smaller model for quicker setup
+        print(f"{colors.INFO}Loading transformer model '{model_name}'... (this might take a moment the first time){colors.RESET}")
+        try:
+            transformer_pipe = pipeline('text-generation', model=model_name)
+            print(f"{colors.SUCCESS}Model loaded successfully.{colors.RESET}")
+        except Exception as e:
+            print(f"{colors.ERROR}Failed to load transformer model: {e}{colors.RESET}")
+            return
 
     print("-" * 30)
     print(f"Using provider: {colors.INFO}{provider.capitalize()}{colors.RESET}")
-    print(f"Using model: {colors.INFO}{local_model_name if provider == 'local' else 'Gemini 1.5 Flash'}{colors.RESET}")
+    if provider != 'gemini':
+        model_to_display = local_model_name if provider == 'local' else 'distilgpt2'
+        print(f"Using model: {colors.INFO}{model_to_display}{colors.RESET}")
     print(f"{colors.SUCCESS}Now collecting feedback to build a fine-tuning dataset!{colors.RESET}")
     print("Type 'exit' or 'quit' to close.")
 
@@ -278,10 +340,11 @@ def main():
             command_to_run = None
             if provider == 'gemini':
                 command_to_run = translate_with_gemini(user_prompt, gemini_api_key)
-            else: # local
+            elif provider == 'local':
                 command_to_run = translate_with_local_llm(user_prompt, local_llm_url, local_model_name)
-            
-            # We don't need to execute if translation fails
+            elif provider == 'transformer':
+                command_to_run = translate_with_transformer(user_prompt, transformer_pipe)
+
             if command_to_run:
                 execute_command(command_to_run, user_prompt)
 

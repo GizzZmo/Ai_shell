@@ -274,7 +274,7 @@ def check_and_setup_transformer() -> bool:
     
     print(f"{colors.WARNING}The 'transformers' and 'torch' libraries are required for this option.{colors.RESET}")
     if input("Do you want to install them now? [y/n] ").lower().strip() == 'y':
-        install_command = "pip install transformers torch"
+        install_command = "pip install transformers torch --break-system-packages"
         print(f"Running command: {colors.COMMAND}{install_command}{colors.RESET}")
         if execute_command(install_command, "install transformers") == 0:
             print(f"{colors.SUCCESS}Installation successful. Please restart the script.{colors.RESET}")

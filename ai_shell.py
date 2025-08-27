@@ -14,9 +14,11 @@ except ImportError:
 
 try:
     import torch
-    from transformers import pipeline
+    from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 except ImportError:
     torch = None
+    AutoTokenizer = None
+    AutoModelForCausalLM = None
     pipeline = None
 
 # --- ANSI Color Codes for better terminal UI ---
@@ -125,29 +127,31 @@ def translate_with_local_llm(prompt: str, api_url: str, model_name: str) -> str 
         print(f"\n{colors.ERROR}Error:{colors.RESET} Failed to decode JSON response.")
         return None
 
-def translate_with_transformer(prompt: str, pipe) -> str | None:
+def translate_with_transformer(prompt: str, model, tokenizer) -> str | None:
     """
     Translates a prompt using a local Hugging Face transformer model.
     """
-    if not pipe:
-        print(f"\n{colors.ERROR}Error:{colors.RESET} Transformer pipeline is not available.")
+    if not model or not tokenizer:
+        print(f"\n{colors.ERROR}Error:{colors.RESET} Transformer model or tokenizer is not available.")
         return None
     try:
         meta_prompt = build_meta_prompt(prompt)
-        sequences = pipe(
-            meta_prompt,
-            max_new_tokens=50,
-            do_sample=False,
-            num_return_sequences=1,
-        )
-        # The output is a list of dictionaries, we need to extract the generated text
-        if sequences and isinstance(sequences, list) and 'generated_text' in sequences[0]:
-             # The generated text includes the prompt, so we remove it
-            full_text = sequences[0]['generated_text']
-            command_text = full_text.replace(meta_prompt, '')
-            command = clean_llm_response(command_text)
-            return command if command else None
-        return None
+        inputs = tokenizer(meta_prompt, return_tensors="pt")
+        
+        # Move tensors to the same device as the model
+        if torch.cuda.is_available():
+            inputs = {k: v.to('cuda') for k, v in inputs.items()}
+            model.to('cuda')
+
+        outputs = model.generate(**inputs, max_new_tokens=50)
+        
+        # Decode the output, skipping special tokens
+        full_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        
+        # The generated text includes the prompt, so we remove it
+        command_text = full_text.replace(meta_prompt, '')
+        command = clean_llm_response(command_text)
+        return command if command else None
     except Exception as e:
         print(f"\n{colors.ERROR}Error during translation with transformer:{colors.RESET} {e}")
         return None
@@ -268,7 +272,7 @@ def check_and_setup_ollama(model_name: str) -> bool:
 
 def check_and_setup_transformer() -> bool:
     """Checks if transformers and torch are installed and guides the user if not."""
-    if torch and pipeline:
+    if torch and AutoTokenizer and AutoModelForCausalLM:
         print(f"{colors.SUCCESS}Transformers library is already installed.{colors.RESET}")
         return True
     
@@ -295,7 +299,8 @@ def main():
         elif choice == '2': provider = 'local'
         elif choice == '3': provider = 'transformer'
 
-    gemini_api_key, local_llm_url, local_model_name, transformer_pipe = None, None, "whiterabbitneo", None
+    gemini_api_key, local_llm_url, local_model_name = None, None, "whiterabbitneo"
+    transformer_model, transformer_tokenizer = None, None
 
     if provider == 'gemini':
         gemini_api_key = os.environ.get("API_KEY") or getpass.getpass("Please enter your Gemini API Key: ").strip()
@@ -313,10 +318,11 @@ def main():
         local_llm_url = f"http://{ip}:{port}/api/generate"
     elif provider == 'transformer':
         if not check_and_setup_transformer(): return
-        model_name = "distilgpt2" # A smaller model for quicker setup
-        print(f"{colors.INFO}Loading transformer model '{model_name}'... (this might take a moment the first time){colors.RESET}")
+        model_name = "WhiteRabbitNeo/WhiteRabbitNeo-33B-v1"
+        print(f"{colors.INFO}Loading transformer model '{model_name}'... (this will take a long time and a lot of disk space the first time){colors.RESET}")
         try:
-            transformer_pipe = pipeline('text-generation', model=model_name)
+            transformer_tokenizer = AutoTokenizer.from_pretrained(model_name)
+            transformer_model = AutoModelForCausalLM.from_pretrained(model_name)
             print(f"{colors.SUCCESS}Model loaded successfully.{colors.RESET}")
         except Exception as e:
             print(f"{colors.ERROR}Failed to load transformer model: {e}{colors.RESET}")
@@ -325,7 +331,7 @@ def main():
     print("-" * 30)
     print(f"Using provider: {colors.INFO}{provider.capitalize()}{colors.RESET}")
     if provider != 'gemini':
-        model_to_display = local_model_name if provider == 'local' else 'distilgpt2'
+        model_to_display = local_model_name if provider == 'local' else 'WhiteRabbitNeo/WhiteRabbitNeo-33B-v1'
         print(f"Using model: {colors.INFO}{model_to_display}{colors.RESET}")
     print(f"{colors.SUCCESS}Now collecting feedback to build a fine-tuning dataset!{colors.RESET}")
     print("Type 'exit' or 'quit' to close.")
@@ -343,7 +349,7 @@ def main():
             elif provider == 'local':
                 command_to_run = translate_with_local_llm(user_prompt, local_llm_url, local_model_name)
             elif provider == 'transformer':
-                command_to_run = translate_with_transformer(user_prompt, transformer_pipe)
+                command_to_run = translate_with_transformer(user_prompt, transformer_model, transformer_tokenizer)
 
             if command_to_run:
                 execute_command(command_to_run, user_prompt)

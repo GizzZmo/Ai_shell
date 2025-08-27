@@ -188,9 +188,9 @@ def execute_command(command: str, user_prompt: str):
 
 # --- Local LLM Setup ---
 
-def check_and_setup_ollama() -> bool:
+def check_and_setup_ollama(model_name: str) -> bool:
     """
-    Checks if Ollama is installed and guides the user through setup if it's not.
+    Checks if Ollama is installed and if the specified model is available.
     """
     try:
         subprocess.run(["ollama", "--version"], capture_output=True, check=True)
@@ -210,11 +210,11 @@ def check_and_setup_ollama() -> bool:
 
     try:
         result = subprocess.run(["ollama", "list"], capture_output=True, text=True, check=True)
-        if "llama3" not in result.stdout:
-            print(f"{colors.WARNING}'llama3' model not found. I will download it now.{colors.RESET}")
-            execute_command("ollama pull llama3", "pull llama3 model")
+        if model_name not in result.stdout:
+            print(f"{colors.WARNING}'{model_name}' model not found. I will download it now (this may take a while).{colors.RESET}")
+            execute_command(f"ollama pull {model_name}", f"pull {model_name} model")
         else:
-            print(f"{colors.SUCCESS}'llama3' model is available.{colors.RESET}")
+            print(f"{colors.SUCCESS}'{model_name}' model is available.{colors.RESET}")
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
     return True
@@ -227,26 +227,29 @@ def main():
 
     provider = ""
     while provider not in ['gemini', 'local']:
-        choice = input(f"Choose an LLM provider:\n{colors.INFO}1. Gemini{colors.RESET}\n{colors.INFO}2. Local LLM{colors.RESET}\nEnter choice (1 or 2): ").strip()
+        choice = input(f"Choose an LLM provider:\n{colors.INFO}1. Gemini{colors.RESET}\n{colors.INFO}2. Local LLM (WhiteRabbitNeo){colors.RESET}\nEnter choice (1 or 2): ").strip()
         if choice == '1': provider = 'gemini'
         elif choice == '2': provider = 'local'
 
-    gemini_api_key, local_llm_url, local_model_name = None, None, "llama3"
+    gemini_api_key, local_llm_url, local_model_name = None, None, "whiterabbitneo"
 
     if provider == 'gemini':
         gemini_api_key = os.environ.get("API_KEY") or getpass.getpass("Please enter your Gemini API Key: ").strip()
         if not gemini_api_key:
             print(f"{colors.ERROR}No API key provided. Exiting.{colors.RESET}"); return
-    else:
-        if not check_and_setup_ollama(): return
+    else: # local
+        if not check_and_setup_ollama(local_model_name): return
         ip = input("Enter IP address [localhost]: ").strip() or "localhost"
         port = input("Enter port [11434]: ").strip() or "11434"
         local_llm_url = f"http://{ip}:{port}/api/generate"
         custom_model = input(f"Enter model name [{local_model_name}]: ").strip()
-        if custom_model: local_model_name = custom_model
+        if custom_model: 
+            local_model_name = custom_model
+            check_and_setup_ollama(local_model_name) # Check for the custom model too
     
     print("-" * 30)
     print(f"Using provider: {colors.INFO}{provider.capitalize()}{colors.RESET}")
+    print(f"Using model: {colors.INFO}{local_model_name if provider == 'local' else 'Gemini 1.5 Flash'}{colors.RESET}")
     print(f"{colors.SUCCESS}Now collecting feedback to build a fine-tuning dataset!{colors.RESET}")
     print("Type 'exit' or 'quit' to close.")
 
@@ -260,7 +263,7 @@ def main():
             command_to_run = None
             if provider == 'gemini':
                 command_to_run = translate_with_gemini(user_prompt, gemini_api_key)
-            else:
+            else: # local
                 command_to_run = translate_with_local_llm(user_prompt, local_llm_url, local_model_name)
             
             execute_command(command_to_run, user_prompt)
@@ -271,4 +274,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

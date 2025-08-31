@@ -28,6 +28,7 @@ class colors:
     PROMPT = '\033[1;36m'
     ASSISTANT = '\033[1;32m'
     METASPLOIT = '\033[1;31m' # For Metasploit-specific output
+    WAPITI = '\033[1;38;5;208m' # For Wapiti-specific output (Orange)
 
 # --- LLM Integration & System Prompts ---
 
@@ -40,7 +41,7 @@ ASSISTANT_SYSTEM_PROMPT = (
     f"The user's operating system is: {platform.system()}."
 )
 
-# New system prompt specifically for the Metasploit assistant
+# System prompt specifically for the Metasploit assistant
 METASPLOIT_SYSTEM_PROMPT = (
     "You are a world-class cybersecurity expert and penetration testing assistant. The user is currently inside the Metasploit Framework console (`msfconsole`). "
     "Your primary goal is to help the user conduct their penetration test effectively and safely. "
@@ -48,6 +49,16 @@ METASPLOIT_SYSTEM_PROMPT = (
     "When you provide a command for the user to execute, you MUST enclose it in a ```bash ... ``` markdown block. "
     "Example commands include `search cve:2021 type:exploit`, `use exploit/windows/smb/ms17_010_eternalblue`, `set RHOSTS 10.10.1.5`, `run`, etc. "
     "Always prioritize ethical considerations and user safety. Be conversational and act as a senior penetration tester mentoring a junior."
+)
+
+# New system prompt specifically for the Wapiti assistant
+WAPITI_SYSTEM_PROMPT = (
+    "You are a world-class web application security expert. The user is in a shell environment with the `wapiti` tool available. "
+    "Your primary goal is to help the user scan web applications for vulnerabilities effectively. "
+    "Provide guidance, explain web vulnerabilities (like XSS, SQLi, LFI), and suggest the exact `wapiti` commands to perform scans. "
+    "When you provide a command for the user to execute, you MUST enclose it in a ```bash ... ``` markdown block. "
+    "Example commands include `wapiti -u http://example.com`, `wapiti -u http://test.com -m xss,sqli --scope domain`, `wapiti -u http://vulnerable.site -x http://vulnerable.site/logout`. "
+    "Always remind the user to only scan applications they have explicit permission to test. Be conversational and act as a senior security analyst."
 )
 
 
@@ -111,7 +122,7 @@ def get_gemini_response(prompt: str, api_key: str, mode: str, system_prompt: str
                 generation_config=genai.types.GenerationConfig(temperature=0.0, max_output_tokens=100)
             )
             return clean_llm_response(response.text), chat_session
-        else: # assistant or metasploit
+        else: # assistant, metasploit, or wapiti
             if chat_session is None:
                 model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=system_prompt)
                 chat_session = model.start_chat(history=[])
@@ -131,7 +142,7 @@ def get_local_llm_response(prompt: str, api_url: str, model_name: str, mode: str
     if mode == 'translator':
         meta_prompt = build_translator_meta_prompt(prompt)
         payload = {"model": model_name, "prompt": meta_prompt, "stream": False, "options": {"temperature": 0.0}}
-    else: # assistant or metasploit
+    else: # assistant, metasploit, or wapiti
         full_prompt = f"<|system|>\n{system_prompt}\n"
         for turn in history:
             full_prompt += f"<|user|>\n{turn['user']}\n<|assistant|>\n{turn['assistant']}\n"
@@ -313,80 +324,65 @@ def assistant_loop(provider, config):
             if command_to_run:
                 execute_command(command_to_run, user_prompt)
 
-async def metasploit_loop(provider, config):
+async def pty_loop_base(provider, config, tool_name: str, tool_color: str, system_prompt: str, start_command: list):
     """
-    Main loop for the Metasploit Assistant.
-    Spawns msfconsole in a pseudoterminal and interacts with it.
+    A generic base function for running a tool in a pseudoterminal with AI assistance.
     """
-    print("\n--- Metasploit Assistant Mode ---")
-    print("Starting msfconsole. This may take a moment...")
-    print("Once started, you can ask the AI for Metasploit commands or enter them directly.")
-    print(f"To ask the AI, start your prompt with a '{colors.PROMPT}?{colors.RESET}'. Example: {colors.PROMPT}? search for eternalblue{colors.RESET}")
-    print(f"To exit, type '{colors.COMMAND}exit{colors.RESET}' at the msfconsole prompt.")
+    print(f"\n--- {tool_name.capitalize()} Assistant Mode ---")
+    print(f"Starting a shell for {tool_name} tasks.")
+    print(f"To ask the AI for commands, start your prompt with a '{colors.PROMPT}?{colors.RESET}'. Example: {colors.PROMPT}? scan example.com for xss{colors.RESET}")
+    print(f"To exit, type '{colors.COMMAND}exit{colors.RESET}' at the shell prompt.")
 
-    # Fork the process to create a pseudoterminal
     pid, master_fd = pty.fork()
 
     if pid == 0:  # Child process
-        # Check for msfconsole executable
         try:
-            # Launch msfconsole without the banner (-q) for a cleaner start
-            os.execvp('msfconsole', ['msfconsole', '-q'])
+            os.execvp(start_command[0], start_command)
         except FileNotFoundError:
-            print(f"{colors.ERROR}Error: 'msfconsole' not found.{colors.RESET}")
-            print("Please ensure the Metasploit Framework is installed and in your PATH.")
+            print(f"{colors.ERROR}Error: '{start_command[0]}' not found.{colors.RESET}")
+            print(f"Please ensure it is installed and in your PATH.")
             os._exit(1)
     else:  # Parent process
         loop = asyncio.get_event_loop()
-        
         gemini_chat_session = None
         local_history = []
 
-        # Make stdin and master_fd non-blocking
         os.set_blocking(master_fd, False)
         os.set_blocking(0, False)
 
         def handle_user_input():
-            """Coroutine to handle user input from stdin."""
             try:
                 user_data = os.read(0, 1024)
                 if user_data:
                     user_input = user_data.decode().strip()
-                    # Check for AI trigger
                     if user_input.startswith('?'):
                         handle_ai_interaction(user_input[1:].strip())
                     else:
-                        # Write normal command to msfconsole
                         os.write(master_fd, user_data)
             except (BlockingIOError, InterruptedError):
                 pass
 
-        def handle_msf_output():
-            """Coroutine to handle output from msfconsole."""
+        def handle_tool_output():
             try:
-                msf_data = os.read(master_fd, 1024)
-                if msf_data:
-                    # Use a specific color for msfconsole output
-                    print(f"{colors.METASPLOIT}{msf_data.decode()}{colors.RESET}", end='', flush=True)
+                tool_data = os.read(master_fd, 1024)
+                if tool_data:
+                    print(f"{tool_color}{tool_data.decode()}{colors.RESET}", end='', flush=True)
                 else:
-                    # EOF, process has exited
                     loop.stop()
             except (BlockingIOError, InterruptedError):
                 pass
         
         def handle_ai_interaction(user_prompt):
-            """Handles the logic for getting and executing AI commands."""
+            nonlocal gemini_chat_session, local_history
             print(f"\n{colors.INFO}Assistant is thinking...{colors.RESET}")
             assistant_response = None
-            nonlocal gemini_chat_session, local_history
-
             if provider == 'gemini':
                 assistant_response, gemini_chat_session = get_gemini_response(
-                    user_prompt, config['api_key'], 'metasploit', METASPLOIT_SYSTEM_PROMPT, gemini_chat_session
+                    user_prompt, config['api_key'], tool_name, system_prompt, gemini_chat_session
                 )
             else: # local
                 assistant_response = get_local_llm_response(
-                    user_prompt, config['url'], config['model'], 'metasploit', METASPLOIT_SYSTEM_PROMPT, local_history
+                    user_prompt, config['url'], config['model'], tool_name, system_prompt, local_history
                 )
                 if assistant_response:
                     local_history.append({"user": user_prompt, "assistant": assistant_response})
@@ -395,29 +391,60 @@ async def metasploit_loop(provider, config):
                 print(f"\n{colors.ASSISTANT}Assistant:{colors.RESET}\n{assistant_response}")
                 command_to_run = extract_command_from_response(assistant_response)
                 if command_to_run:
-                    print(f"\nI am about to run this command in msfconsole: {colors.COMMAND}{command_to_run}{colors.RESET}")
-                    confirm = input("Do you want to proceed? [y/n] ").lower().strip()
-                    if confirm == 'y':
-                        # Write the command to the msfconsole process
-                        os.write(master_fd, (command_to_run + '\n').encode())
-                    else:
-                        print("Execution cancelled.")
+                    print(f"\nI am about to run this command in the shell: {colors.COMMAND}{command_to_run}{colors.RESET}")
+                    loop.remove_reader(0)
+                    os.set_blocking(0, True)
+                    try:
+                        confirm = input("Do you want to proceed? [y/n] ").lower().strip()
+                        if confirm == 'y':
+                            os.write(master_fd, (command_to_run + '\n').encode())
+                        else:
+                            print("Execution cancelled.")
+                    finally:
+                        os.set_blocking(0, False)
+                        loop.add_reader(0, handle_user_input)
             else:
                 print(f"\n{colors.WARNING}The assistant did not provide a response.{colors.RESET}")
 
-
-        # Add readers for stdin and the msfconsole process
         loop.add_reader(0, handle_user_input)
-        loop.add_reader(master_fd, handle_msf_output)
+        loop.add_reader(master_fd, handle_tool_output)
 
         try:
-            await asyncio.Event().wait() # Run forever until loop.stop() is called
+            await asyncio.Event().wait()
         finally:
             loop.remove_reader(0)
             loop.remove_reader(master_fd)
-            # Restore blocking mode for stdin
             os.set_blocking(0, True)
-            print("\nMetasploit session ended.")
+            print(f"\n{tool_name.capitalize()} session ended.")
+
+
+async def metasploit_loop(provider, config):
+    """Wrapper for the Metasploit Assistant."""
+    await pty_loop_base(
+        provider, config,
+        tool_name='metasploit',
+        tool_color=colors.METASPLOIT,
+        system_prompt=METASPLOIT_SYSTEM_PROMPT,
+        start_command=['msfconsole', '-q']
+    )
+
+async def wapiti_loop(provider, config):
+    """Wrapper for the Wapiti Assistant."""
+    # Check if wapiti is installed
+    try:
+        subprocess.run(['wapiti', '--version'], capture_output=True, check=True)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        print(f"{colors.ERROR}Error: 'wapiti' not found or not working.{colors.RESET}")
+        print("Please ensure Wapiti is installed and in your PATH. (e.g., 'sudo apt install wapiti' or 'pip install wapiti3')")
+        return
+
+    await pty_loop_base(
+        provider, config,
+        tool_name='wapiti',
+        tool_color=colors.WAPITI,
+        system_prompt=WAPITI_SYSTEM_PROMPT,
+        start_command=['bash']  # Start a bash shell for flexibility
+    )
 
 
 # --- Main Application Logic ---
@@ -426,17 +453,20 @@ def main():
     print(f"\n{colors.SUCCESS}Welcome to the AI-Powered Shell!{colors.RESET}")
 
     mode = ""
-    while mode not in ['translator', 'assistant', 'metasploit']:
+    while mode not in ['translator', 'assistant', 'metasploit', 'wapiti']:
         choice = input(
             f"Choose an operating mode:\n"
             f"{colors.INFO}1. Command Translator{colors.RESET} (Prompt -> Command)\n"
             f"{colors.INFO}2. AI Assistant{colors.RESET} (Conversational shell help)\n"
             f"{colors.INFO}3. Metasploit Assistant{colors.RESET} (AI-driven penetration testing)\n"
-            "Enter choice (1, 2, or 3): "
+            f"{colors.INFO}4. Wapiti Assistant{colors.RESET} (AI-driven web app scanning)\n"
+            "Enter choice (1, 2, 3, or 4): "
         ).strip()
         if choice == '1': mode = 'translator'
         elif choice == '2': mode = 'assistant'
         elif choice == '3': mode = 'metasploit'
+        elif choice == '4': mode = 'wapiti'
+
 
     provider = ""
     while provider not in ['gemini', 'local']:
@@ -484,6 +514,8 @@ def main():
             assistant_loop(provider, config)
         elif mode == 'metasploit':
             asyncio.run(metasploit_loop(provider, config))
+        elif mode == 'wapiti':
+            asyncio.run(wapiti_loop(provider, config))
     except (KeyboardInterrupt, EOFError):
         print("\nExiting...")
     
@@ -491,3 +523,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

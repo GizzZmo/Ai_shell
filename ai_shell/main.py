@@ -1,4 +1,35 @@
-"""Main application entry point for AI Shell."""
+"""
+AI Shell - Main Application Entry Point
+
+This module serves as the primary entry point for the AI Shell application,
+providing command-line interface, mode management, and core application logic.
+
+The application supports three main operating modes:
+1. Command Translator: Direct natural language to shell command translation
+2. AI Assistant: Conversational mode with context awareness
+3. Metasploit Assistant: Specialized penetration testing support
+
+Key Features:
+- Multi-provider LLM support (Gemini, Ollama)
+- Interactive PTY sessions for tool integration
+- Real-time command output streaming
+- Security validation and user confirmation
+- Training data collection and feedback loops
+
+Examples:
+    Basic usage:
+        $ ai-shell
+        
+    Direct mode selection:
+        $ ai-shell --mode translator
+        $ ai-shell --mode assistant --provider local
+        
+    Custom configuration:
+        $ ai-shell --config myconfig.yaml --no-confirmation
+
+Author: AI Shell Contributors
+License: MIT
+"""
 
 import argparse
 import asyncio
@@ -26,7 +57,22 @@ from .ui import (
 
 
 def setup_logging():
-    """Setup logging configuration."""
+    """
+    Configure logging for the AI Shell application.
+    
+    Sets up logging based on configuration file settings, including:
+    - Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    - Log file location
+    - Log format string
+    - Multiple handlers (file and console)
+    
+    The configuration is loaded from the global config and supports
+    environment variable overrides.
+    
+    Raises:
+        PermissionError: If log file cannot be created/written
+        ValueError: If log level is invalid
+    """
     config = get_config()
     log_level = config.get('logging.level', 'INFO')
     log_file = config.get('logging.file', 'ai_shell.log')
@@ -43,7 +89,30 @@ def setup_logging():
 
 
 def parse_arguments():
-    """Parse command line arguments."""
+    """
+    Parse and validate command-line arguments.
+    
+    Creates an argument parser with all supported command-line options
+    including mode selection, provider configuration, logging options,
+    and security settings.
+    
+    Returns:
+        argparse.Namespace: Parsed command-line arguments with the following attributes:
+            - mode (str): Operating mode ('translator', 'assistant', 'metasploit', 'wapiti')
+            - provider (str): LLM provider ('gemini', 'local')
+            - config (str): Path to configuration file
+            - api_key (str): API key for cloud providers
+            - no_confirmation (bool): Skip command confirmation
+            - log_level (str): Override log level
+            - version (bool): Show version information
+    
+    Examples:
+        >>> args = parse_arguments()
+        >>> print(args.mode)
+        'translator'
+        >>> print(args.provider)
+        'gemini'
+    """
     parser = argparse.ArgumentParser(
         description="AI Shell - An intelligent command-line assistant",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -402,7 +471,34 @@ async def pty_loop_base(tool_name: str, tool_color: str, system_prompt: str, sta
 
 
 def main():
-    """Main entry point for the AI Shell application."""
+    """
+    Main entry point for the AI Shell application.
+    
+    Orchestrates the complete application workflow including:
+    1. Command-line argument parsing and validation
+    2. Logging setup and configuration loading
+    3. LLM provider initialization
+    4. Mode selection and execution
+    5. Error handling and graceful shutdown
+    
+    The function handles different operating modes:
+    - translator: Direct command translation
+    - assistant: Conversational AI assistance
+    - metasploit: Security testing with msfconsole integration
+    - wapiti: Web application security scanning
+    
+    Returns:
+        int: Exit code (0 for success, non-zero for errors)
+        
+    Raises:
+        KeyboardInterrupt: User interrupted the application
+        SystemExit: Application terminated due to critical error
+        
+    Examples:
+        Run from command line:
+            $ ai-shell
+            $ ai-shell --mode translator --provider local
+    """
     args = parse_arguments()
     
     # Setup logging

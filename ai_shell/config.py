@@ -1,4 +1,63 @@
-"""Configuration management for AI Shell."""
+"""
+Configuration Management for AI Shell
+
+This module provides comprehensive configuration management for AI Shell,
+supporting YAML files, environment variables, and programmatic configuration.
+
+The configuration system follows a hierarchical approach:
+1. Command-line arguments (highest priority)
+2. Environment variables 
+3. Configuration files (YAML)
+4. Default values (lowest priority)
+
+Key Features:
+- YAML-based configuration with environment variable substitution
+- Nested configuration access using dot notation
+- Automatic configuration file discovery
+- Runtime configuration updates
+- Configuration validation and error handling
+
+Examples:
+    Basic usage:
+        >>> config = Config()
+        >>> api_key = config.get('llm.gemini.api_key')
+        >>> config.set('security.require_confirmation', False)
+        
+    Load from specific file:
+        >>> config = Config('/path/to/config.yaml')
+        
+    Environment variable integration:
+        >>> os.environ['GEMINI_API_KEY'] = 'key123'
+        >>> config = get_config()
+        >>> key = config.get('llm.gemini.api_key')  # Returns 'key123'
+
+Configuration Schema:
+    llm:
+        provider: str                    # 'gemini' or 'local'
+        gemini:
+            api_key: str                # API key for Gemini
+            model: str                  # Model name
+        local:
+            host: str                   # Ollama host
+            port: int                   # Ollama port
+            model: str                  # Local model name
+    
+    security:
+        require_confirmation: bool       # Require user confirmation
+        dangerous_commands: List[str]    # List of dangerous command patterns
+        
+    logging:
+        level: str                      # Log level (DEBUG, INFO, etc.)
+        file: str                       # Log file path
+        format: str                     # Log format string
+        
+    training:
+        dataset_file: str               # Training data file path
+        auto_log: bool                  # Auto-log successful commands
+
+Author: AI Shell Contributors
+License: MIT
+"""
 
 import os
 import yaml
@@ -7,7 +66,27 @@ from pathlib import Path
 
 
 class Config:
-    """Configuration manager for AI Shell."""
+    """
+    Configuration manager for AI Shell with YAML and environment variable support.
+    
+    This class provides a unified interface for accessing configuration values
+    from multiple sources with proper precedence handling. It supports:
+    - YAML configuration files
+    - Environment variable overrides
+    - Nested key access using dot notation
+    - Runtime configuration updates
+    - Default value fallbacks
+    
+    Attributes:
+        config_file (str): Path to the loaded configuration file
+        config (dict): Loaded configuration data
+        
+    Examples:
+        >>> config = Config()
+        >>> provider = config.get('llm.provider', 'gemini')
+        >>> config.set('security.require_confirmation', True)
+        >>> config.save('updated_config.yaml')
+    """
     
     def __init__(self, config_file: Optional[str] = None):
         """Initialize configuration.

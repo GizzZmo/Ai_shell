@@ -1,69 +1,71 @@
-AI Shell: Your Command-Line Copilot
-AI Shell is an intelligent, multi-modal command-line assistant designed to bridge the gap between natural language and complex shell operations. It leverages the power of Large Language Models (LLMs) to translate your requests into executable commands, assist with conversational guidance, and even integrate with specialized tools like the Metasploit Framework.
+# AI Shell 🤖
 
-Whether you're a beginner learning the ropes or a seasoned expert looking to accelerate your workflow, AI Shell is your ultimate command-line copilot.
+<div align="center">
 
-🚀 Evolution: From Simple Translator to Powerful Assistant
-The journey from version 0.0.3 to the current release marks a significant architectural and functional leap. The tool has evolved from a basic single-purpose translator into a sophisticated, multi-tool platform.
+**Your Intelligent Command-Line Copilot**
 
-Key Enhancements Since v0.0.3:
-Multi-Modal Architecture: The single "translator" mode has been expanded into three distinct operating modes:
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://img.shields.io/badge/tests-passing-green.svg)](#testing)
 
-Command Translator: The original, direct prompt -> command functionality.
+*Transform natural language into powerful shell commands with AI*
 
-AI Assistant: A conversational, stateful chat mode for general assistance, explanations, and multi-step tasks.
+[🚀 Quick Start](#quick-start) • [📖 Documentation](#documentation) • [🤝 Contributing](CONTRIBUTING.md) • [🐛 Issues](https://github.com/GizzZmo/Ai_shell/issues)
 
-Metasploit Assistant: A specialized mode that launches msfconsole in an interactive session, with an AI expert ready to guide your penetration testing workflow.
+</div>
 
-Interactive Tool Integration: The most significant architectural change is the move from basic subprocess calls to a pseudoterminal (pty). This allows AI Shell to run and interact with stateful, persistent applications like msfconsole, capturing real-time output and maintaining the tool's internal state (e.g., set variables, active modules).
+---
 
-Advanced LLM Interaction:
+## Overview
 
-Specialized System Prompts: Each mode now uses a unique, carefully crafted system prompt that primes the LLM for the specific context (general shell vs. Metasploit).
+AI Shell is an intelligent, multi-modal command-line assistant that bridges the gap between natural language and complex shell operations. Powered by Large Language Models (LLMs), it translates your requests into executable commands, provides conversational guidance, and integrates with specialized tools like the Metasploit Framework.
 
-Conversational Memory: The Assistant and Metasploit modes maintain a chat history, allowing for follow-up questions and context-aware responses.
+Whether you're a beginner learning the command line or a seasoned expert looking to accelerate your workflow, AI Shell adapts to your needs.
 
-Enhanced Local LLM Support (Ollama):
+## ✨ Key Features
 
-Setup and model pulling is now automated.
+- **🔄 Multi-Modal Architecture**: Three distinct operating modes for different use cases
+- **🧠 Advanced LLM Integration**: Support for both cloud (Gemini) and local (Ollama) models
+- **🔒 Security-First Design**: Built-in command validation and user confirmation
+- **💬 Conversational Memory**: Context-aware responses with chat history
+- **🛠️ Tool Integration**: Native support for penetration testing workflows
+- **📊 Learning Capability**: Feedback loop for continuous improvement
 
-The script checks for available memory and provides a menu of well-tested local models.
+## 🎯 Operating Modes
 
-Data-Driven Improvement: A feedback loop (log_training_pair) has been introduced, allowing users to confirm correct commands or provide corrections. This creates a valuable dataset for future fine-tuning of the AI model.
+### 1. Command Translator Mode
+Transform natural language into precise shell commands.
 
-Improved User Experience: The command execution now streams output in real-time, providing a much better experience for long-running processes. The UI has been enhanced with more distinct colors and clearer instructions.
+```bash
+> find all files larger than 100MB in my home directory
+→ find ~ -type f -size +100M
+```
 
-🔥 Core Features & Operating Modes
-1. Command Translator Mode
-The classic AI Shell experience. Describe what you want to do in plain English, and the AI will provide the exact shell command.
+### 2. AI Assistant Mode
+Conversational partner for complex command-line tasks with explanations and guidance.
 
-Input: > find all files larger than 100MB in my home directory
-
-Output: find ~ -type f -size +100M
-
-2. AI Assistant Mode
-A conversational partner for your command-line tasks. Ask for explanations, get help with complex workflows, or have the AI generate commands in a chat-like interface.
-
+```
 You: How can I check which processes are using the most memory?
+Assistant: On Linux, you can use the 'ps' command combined with 'sort':
 
-Assistant: On Linux, you can use the 'ps' command combined with 'sort'. Here is a command that should work for you: \``bash
+```bash
 ps aux --sort=-%mem | head -n 10
 ```
-This command lists all running processes, sorts them by memory usage in descending order, and shows you the top 10.`
 
-3. Metasploit Assistant Mode
-Your personal cybersecurity expert. This mode launches an interactive msfconsole session and provides an AI assistant that is specifically trained to help with penetration testing tasks.
+This lists all running processes, sorts them by memory usage in descending order, and shows the top 10.
+```
 
-Direct Interaction: Type any msfconsole command directly.
+### 3. Metasploit Assistant Mode
+Your personal cybersecurity expert with direct msfconsole integration.
 
-AI Guidance: Prefix your request with ? to ask the AI for help.
+Assistant: You can search for Log4j exploits using the 'search' command:
 
-Input: ? search for exploits related to the log4j vulnerability
-
-Assistant: Of course. You can search for Log4j exploits using the 'search' command. Here is a precise command: \``bash
+```bash
 search cve:2021-44228
 ```
-Would you like me to run this command for you?`
+
+Would you like me to run this command for you?
+```
 
 ## 🚀 Quick Start
 
@@ -71,7 +73,6 @@ Would you like me to run this command for you?`
 
 - **Python 3.8+** 
 - **Metasploit Framework** (optional, for Metasploit mode)
-- **Wapiti** (optional, for web application scanning)
 - **Ollama** (optional, for local LLMs)
 
 ### Installation
@@ -86,7 +87,7 @@ cd Ai_shell
 # Install dependencies
 pip install -r requirements.txt
 
-# Install the package in development mode
+# Install the package
 pip install -e .
 ```
 
@@ -115,9 +116,8 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
    ```bash
    export GEMINI_API_KEY="your_api_key_here"
    ```
-   Or edit `config.yaml` directly.
 
-3. **For local LLMs**, ensure Ollama is installed:
+3. **For local LLMs**, install Ollama:
    ```bash
    # Install Ollama (Linux)
    curl -fsSL https://ollama.ai/install.sh | sh
@@ -128,8 +128,6 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 
 ### Usage
 
-#### Command Line Interface
-
 ```bash
 # Interactive mode selection
 ai-shell
@@ -138,7 +136,6 @@ ai-shell
 ai-shell --mode translator
 ai-shell --mode assistant 
 ai-shell --mode metasploit
-ai-shell --mode wapiti
 
 # Specify provider
 ai-shell --provider local
@@ -146,28 +143,11 @@ ai-shell --provider gemini --api-key your_key
 
 # Use custom config
 ai-shell --config myconfig.yaml
-
-# Skip confirmations (be careful!)
-ai-shell --no-confirmation
 ```
 
-#### Python Module
+## 📖 Documentation
 
-```python
-from ai_shell.main import main
-from ai_shell.config import get_config
-
-# Run the application
-main()
-
-# Or use components directly
-config = get_config()
-print(f"Current provider: {config.get('llm.provider')}")
-```
-
-## 📚 Documentation
-
-### Configuration File
+### Configuration
 
 The `config.yaml` file allows you to customize AI Shell's behavior:
 
@@ -175,7 +155,7 @@ The `config.yaml` file allows you to customize AI Shell's behavior:
 llm:
   provider: gemini  # or 'local'
   gemini:
-    api_key: ""  # Your Gemini API key
+    api_key: ""
     model: gemini-1.5-flash
   local:
     host: localhost
@@ -201,20 +181,34 @@ logging:
 
 ### Security Features
 
-AI Shell includes several security features to protect your system:
-
-- **Command Validation**: Blocks known dangerous commands
-- **User Confirmation**: Requires confirmation before executing commands
+- **Command Validation**: Blocks dangerous commands
+- **User Confirmation**: Requires approval before execution
 - **Input Sanitization**: Protects against command injection
-- **Configurable Restrictions**: Customize dangerous command lists
+- **Configurable Restrictions**: Customizable safety lists
 
-## 🧪 Development
+## 🔧 Development
 
-### Running Tests
+### Project Structure
+
+```
+ai_shell/
+├── ai_shell/           # Main package
+│   ├── main.py         # Application entry point
+│   ├── config.py       # Configuration management
+│   ├── llm.py          # LLM integration
+│   ├── executor.py     # Command execution and security
+│   └── ui.py           # User interface utilities
+├── tests/              # Test suite
+├── docs/               # Documentation (coming soon)
+├── setup.py            # Package setup
+└── requirements.txt    # Dependencies
+```
+
+### Testing
 
 ```bash
 # Install development dependencies
-pip install pytest pytest-cov
+pip install pytest pytest-cov black flake8
 
 # Run all tests
 python -m pytest
@@ -223,12 +217,9 @@ python -m pytest
 python -m pytest --cov=ai_shell
 ```
 
-### Code Formatting
+### Code Style
 
 ```bash
-# Install formatting tools
-pip install black flake8
-
 # Format code
 black ai_shell/ tests/
 
@@ -236,45 +227,23 @@ black ai_shell/ tests/
 flake8 ai_shell/ tests/
 ```
 
-### Project Structure
+## 🔒 Security
 
-```
-ai_shell/
-├── ai_shell/           # Main package
-│   ├── __init__.py     # Package initialization
-│   ├── main.py         # Application entry point
-│   ├── config.py       # Configuration management
-│   ├── llm.py          # LLM integration
-│   ├── executor.py     # Command execution and security
-│   └── ui.py           # User interface utilities
-├── tests/              # Test suite
-│   ├── conftest.py     # Test configuration
-│   ├── test_config.py  # Configuration tests
-│   └── ...             # Other test modules
-├── setup.py            # Package setup
-├── requirements.txt    # Dependencies
-├── config.yaml.example # Example configuration
-└── README.md           # This file
-```
-
-## 🔒 Security Considerations
-
-- **API Keys**: Store API keys securely using environment variables
-- **Command Review**: Always review commands before execution
-- **Local LLMs**: Consider using local LLMs for sensitive environments
-- **Network Security**: Be cautious when using cloud LLM providers
+- **API Keys**: Store securely using environment variables
+- **Command Review**: Always review before execution
+- **Local LLMs**: Consider for sensitive environments
+- **Network Security**: Be cautious with cloud providers
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-### Quick Contribution Steps
+### Quick Steps
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+3. Make your changes with tests
+4. Submit a pull request
 
 ## 📄 License
 
@@ -282,17 +251,17 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Google Gemini for powerful language model capabilities
-- Ollama community for local LLM support
-- Metasploit Framework for penetration testing integration
-- Wapiti for web application security scanning
+- **Google Gemini** for powerful language model capabilities
+- **Ollama** community for local LLM support
+- **Metasploit Framework** for penetration testing integration
 
 ## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/GizzZmo/Ai_shell/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/GizzZmo/Ai_shell/discussions)
-- **Documentation**: See the `docs/` directory (coming soon)
 
 ---
 
-**⚠️ Disclaimer**: AI Shell is a powerful tool that can execute system commands. Always review commands before execution and use appropriate security measures. The developers are not responsible for any damage caused by misuse of this tool.
+**⚠️ Disclaimer**: AI Shell executes system commands. Always review commands before execution and use appropriate security measures. The developers are not responsible for any damage caused by misuse of this tool.
+```bash
+You: ? search for exploits related to the log4j vulnerability

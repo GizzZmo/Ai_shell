@@ -1,0 +1,42 @@
+# AI Shell Configuration
+
+# LLM Provider Settings
+llm:
+  provider: gemini  # Options: 'gemini' or 'local'
+  
+  # Google Gemini settings
+  gemini:
+    api_key: ""  # Set your Gemini API key here or use GEMINI_API_KEY environment variable
+    model: gemini-1.5-flash
+  
+  # Local LLM (Ollama) settings
+  local:
+    host: localhost
+    port: 11434
+    model: llama3  # Available models: llama3, codellama, mistral, etc.
+
+# Logging configuration
+logging:
+  level: INFO  # Options: DEBUG, INFO, WARNING, ERROR
+  file: ai_shell.log
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+# Training data collection
+training:
+  dataset_file: training_dataset.jsonl
+  auto_log: true  # Automatically log training pairs for model improvement
+
+# Security settings
+security:
+  require_confirmation: true  # Require user confirmation before executing commands
+  dangerous_commands:
+    - rm -rf
+    - format
+    - dd if=
+    - mkfs
+    - fdisk
+    - parted
+    - wipefs
+    - shred
+    - chmod 777
+    - chown -R root

@@ -65,37 +65,234 @@ search cve:2021-44228
 ```
 Would you like me to run this command for you?`
 
-🛠️ Setup & Usage
-Prerequisites
-Python 3.8+
+## 🚀 Quick Start
 
-Metasploit Framework: Required only for the Metasploit Assistant mode. Ensure msfconsole is in your system's PATH.
+### Prerequisites
 
-Ollama (Optional): Required for running local LLMs.
+- **Python 3.8+** 
+- **Metasploit Framework** (optional, for Metasploit mode)
+- **Wapiti** (optional, for web application scanning)
+- **Ollama** (optional, for local LLMs)
 
-Installation
-Clone the repository:
+### Installation
 
-git clone <repository-url>
-cd ai-shell
+#### Option 1: From Source (Recommended)
 
-Install Python dependencies:
+```bash
+# Clone the repository
+git clone https://github.com/GizzZmo/Ai_shell.git
+cd Ai_shell
 
-pip install -r requirements.txt 
-# Or manually: pip install google-generativeai requests
+# Install dependencies
+pip install -r requirements.txt
 
-Configuration
-LLM Provider: On startup, you will be prompted to choose between Gemini (cloud) or a Local LLM (Ollama).
+# Install the package in development mode
+pip install -e .
+```
 
-API Key (for Gemini): If you choose Gemini, you will be prompted for your API key. You can also set it as an environment variable to avoid entering it each time:
+#### Option 2: Using Setup Scripts
 
-export API_KEY="your_gemini_api_key_here"
+**Linux/Mac:**
+```bash
+chmod +x install.sh
+./install.sh
+```
 
-Local Model (for Ollama): If you choose a local LLM, the script will guide you through selecting a model and will automatically pull it if it's not already installed.
+**Windows:**
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+.\install.ps1
+```
 
-Running the Application
-Simply execute the Python script:
+### Configuration
 
-python ai_shell_metasploit.py
+1. **Copy the example configuration:**
+   ```bash
+   cp config.yaml.example config.yaml
+   ```
 
-Follow the on-screen prompts to select your desired operating mode and LLM provider.
+2. **Set your API key** (for Gemini):
+   ```bash
+   export GEMINI_API_KEY="your_api_key_here"
+   ```
+   Or edit `config.yaml` directly.
+
+3. **For local LLMs**, ensure Ollama is installed:
+   ```bash
+   # Install Ollama (Linux)
+   curl -fsSL https://ollama.ai/install.sh | sh
+   
+   # Pull a model
+   ollama pull llama3
+   ```
+
+### Usage
+
+#### Command Line Interface
+
+```bash
+# Interactive mode selection
+ai-shell
+
+# Direct modes
+ai-shell --mode translator
+ai-shell --mode assistant 
+ai-shell --mode metasploit
+ai-shell --mode wapiti
+
+# Specify provider
+ai-shell --provider local
+ai-shell --provider gemini --api-key your_key
+
+# Use custom config
+ai-shell --config myconfig.yaml
+
+# Skip confirmations (be careful!)
+ai-shell --no-confirmation
+```
+
+#### Python Module
+
+```python
+from ai_shell.main import main
+from ai_shell.config import get_config
+
+# Run the application
+main()
+
+# Or use components directly
+config = get_config()
+print(f"Current provider: {config.get('llm.provider')}")
+```
+
+## 📚 Documentation
+
+### Configuration File
+
+The `config.yaml` file allows you to customize AI Shell's behavior:
+
+```yaml
+llm:
+  provider: gemini  # or 'local'
+  gemini:
+    api_key: ""  # Your Gemini API key
+    model: gemini-1.5-flash
+  local:
+    host: localhost
+    port: 11434
+    model: llama3
+
+security:
+  require_confirmation: true
+  dangerous_commands:
+    - rm -rf
+    - format
+    - dd if=
+
+logging:
+  level: INFO
+  file: ai_shell.log
+```
+
+### Environment Variables
+
+- `GEMINI_API_KEY`: Your Google Gemini API key
+- `AI_SHELL_CONFIG`: Path to custom configuration file
+
+### Security Features
+
+AI Shell includes several security features to protect your system:
+
+- **Command Validation**: Blocks known dangerous commands
+- **User Confirmation**: Requires confirmation before executing commands
+- **Input Sanitization**: Protects against command injection
+- **Configurable Restrictions**: Customize dangerous command lists
+
+## 🧪 Development
+
+### Running Tests
+
+```bash
+# Install development dependencies
+pip install pytest pytest-cov
+
+# Run all tests
+python -m pytest
+
+# Run with coverage
+python -m pytest --cov=ai_shell
+```
+
+### Code Formatting
+
+```bash
+# Install formatting tools
+pip install black flake8
+
+# Format code
+black ai_shell/ tests/
+
+# Check style
+flake8 ai_shell/ tests/
+```
+
+### Project Structure
+
+```
+ai_shell/
+├── ai_shell/           # Main package
+│   ├── __init__.py     # Package initialization
+│   ├── main.py         # Application entry point
+│   ├── config.py       # Configuration management
+│   ├── llm.py          # LLM integration
+│   ├── executor.py     # Command execution and security
+│   └── ui.py           # User interface utilities
+├── tests/              # Test suite
+│   ├── conftest.py     # Test configuration
+│   ├── test_config.py  # Configuration tests
+│   └── ...             # Other test modules
+├── setup.py            # Package setup
+├── requirements.txt    # Dependencies
+├── config.yaml.example # Example configuration
+└── README.md           # This file
+```
+
+## 🔒 Security Considerations
+
+- **API Keys**: Store API keys securely using environment variables
+- **Command Review**: Always review commands before execution
+- **Local LLMs**: Consider using local LLMs for sensitive environments
+- **Network Security**: Be cautious when using cloud LLM providers
+
+## 🤝 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+### Quick Contribution Steps
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Google Gemini for powerful language model capabilities
+- Ollama community for local LLM support
+- Metasploit Framework for penetration testing integration
+- Wapiti for web application security scanning
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/GizzZmo/Ai_shell/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/GizzZmo/Ai_shell/discussions)
+- **Documentation**: See the `docs/` directory (coming soon)
+
+---
+
+**⚠️ Disclaimer**: AI Shell is a powerful tool that can execute system commands. Always review commands before execution and use appropriate security measures. The developers are not responsible for any damage caused by misuse of this tool.

@@ -1,3 +1,4 @@
+# CI Workflow for AI Shell
 name: CI
 
 on:

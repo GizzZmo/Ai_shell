@@ -45,3 +45,9 @@ config.yaml
 .api_key
 logs/
 *.log
+
+# Coverage reports
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/

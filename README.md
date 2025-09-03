@@ -5,7 +5,7 @@
 **Your Intelligent Command-Line Copilot**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Tests](https://img.shields.io/badge/tests-passing-green.svg)](#testing)
 
 *Transform natural language into powerful shell commands with AI*
@@ -71,7 +71,7 @@ Would you like me to run this command for you?
 
 ### Prerequisites
 
-- **Python 3.8+** 
+- **Python 3.9+** 
 - **Metasploit Framework** (optional, for Metasploit mode)
 - **Ollama** (optional, for local LLMs)
 

@@ -4,17 +4,18 @@ import re
 import platform
 import requests
 import json
-from typing import Optional, Tuple, Dict, List, Any
+from typing import Optional, Tuple, Dict, Any
 
 try:
     import google.generativeai as genai
+
     GENAI_AVAILABLE = True
 except ImportError:
     genai = None
     GENAI_AVAILABLE = False
 
 from .config import get_config
-from .ui import format_error, format_warning
+from .ui import format_error
 
 
 # System prompts for different modes
@@ -47,46 +48,60 @@ WAPITI_SYSTEM_PROMPT = (
 
 class LLMProvider:
     """Base class for LLM providers."""
-    
+
     def __init__(self, config: Dict[str, Any]):
         self.config = config
-    
-    def generate_response(self, prompt: str, mode: str, system_prompt: str = ASSISTANT_SYSTEM_PROMPT, 
-                         chat_session: Any = None) -> Tuple[Optional[str], Any]:
+
+    def generate_response(
+        self,
+        prompt: str,
+        mode: str,
+        system_prompt: str = ASSISTANT_SYSTEM_PROMPT,
+        chat_session: Any = None,
+    ) -> Tuple[Optional[str], Any]:
         """Generate a response from the LLM."""
         raise NotImplementedError
 
 
 class GeminiProvider(LLMProvider):
     """Google Gemini LLM provider."""
-    
+
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         if not GENAI_AVAILABLE:
             raise ImportError("google-generativeai package is not installed")
-        
-        api_key = config.get('api_key', '')
+
+        api_key = config.get("api_key", "")
         if not api_key:
             raise ValueError("Gemini API key is required")
-        
+
         genai.configure(api_key=api_key)
-        self.model_name = config.get('model', 'gemini-1.5-flash')
-    
-    def generate_response(self, prompt: str, mode: str, system_prompt: str = ASSISTANT_SYSTEM_PROMPT,
-                         chat_session: Any = None) -> Tuple[Optional[str], Any]:
+        self.model_name = config.get("model", "gemini-1.5-flash")
+
+    def generate_response(
+        self,
+        prompt: str,
+        mode: str,
+        system_prompt: str = ASSISTANT_SYSTEM_PROMPT,
+        chat_session: Any = None,
+    ) -> Tuple[Optional[str], Any]:
         """Generate a response from Gemini."""
         try:
-            if mode == 'translator':
+            if mode == "translator":
                 model = genai.GenerativeModel(self.model_name)
                 meta_prompt = build_translator_meta_prompt(prompt)
                 response = model.generate_content(
                     meta_prompt,
-                    generation_config=genai.types.GenerationConfig(temperature=0.0, max_output_tokens=100)
+                    generation_config=genai.types.GenerationConfig(
+                        temperature=0.0, max_output_tokens=100
+                    ),
                 )
                 return clean_llm_response(response.text), chat_session
             else:  # assistant, metasploit, or wapiti
                 if chat_session is None:
-                    model = genai.GenerativeModel(self.model_name, system_instruction=system_prompt)
+                    model = genai.GenerativeModel(
+                        self.model_name, system_instruction=system_prompt
+                    )
                     chat_session = model.start_chat(history=[])
                 response = chat_session.send_message(prompt)
                 return response.text, chat_session
@@ -97,26 +112,31 @@ class GeminiProvider(LLMProvider):
 
 class LocalLLMProvider(LLMProvider):
     """Local LLM provider using Ollama."""
-    
+
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
-        self.host = config.get('host', 'localhost')
-        self.port = config.get('port', 11434)
-        self.model = config.get('model', 'llama3')
+        self.host = config.get("host", "localhost")
+        self.port = config.get("port", 11434)
+        self.model = config.get("model", "llama3")
         self.api_url = f"http://{self.host}:{self.port}/api/generate"
         self.history = []
-    
-    def generate_response(self, prompt: str, mode: str, system_prompt: str = ASSISTANT_SYSTEM_PROMPT,
-                         chat_session: Any = None) -> Tuple[Optional[str], Any]:
+
+    def generate_response(
+        self,
+        prompt: str,
+        mode: str,
+        system_prompt: str = ASSISTANT_SYSTEM_PROMPT,
+        chat_session: Any = None,
+    ) -> Tuple[Optional[str], Any]:
         """Generate a response from local LLM."""
         try:
-            if mode == 'translator':
+            if mode == "translator":
                 meta_prompt = build_translator_meta_prompt(prompt)
                 payload = {
                     "model": self.model,
                     "prompt": meta_prompt,
                     "stream": False,
-                    "options": {"temperature": 0.0}
+                    "options": {"temperature": 0.0},
                 }
             else:  # assistant, metasploit, or wapiti
                 full_prompt = f"<|system|>\n{system_prompt}\n"
@@ -127,23 +147,27 @@ class LocalLLMProvider(LLMProvider):
                     "model": self.model,
                     "prompt": full_prompt,
                     "stream": False,
-                    "options": {"temperature": 0.2}
+                    "options": {"temperature": 0.2},
                 }
-            
+
             response = requests.post(self.api_url, json=payload, timeout=60)
             response.raise_for_status()
             data = response.json()
-            
-            if 'error' in data:
+
+            if "error" in data:
                 print(format_error(f"Ollama server error: {data['error']}"))
                 return None, chat_session
-            
-            response_text = data.get('response', '')
-            if mode != 'translator':
+
+            response_text = data.get("response", "")
+            if mode != "translator":
                 self.history.append({"user": prompt, "assistant": response_text})
-            
-            return clean_llm_response(response_text) if mode == 'translator' else response_text, chat_session
-            
+
+            return (
+                clean_llm_response(response_text)
+                if mode == "translator"
+                else response_text
+            ), chat_session
+
         except requests.exceptions.RequestException as e:
             print(format_error(f"Local LLM API error: {e}"))
             return None, chat_session
@@ -161,7 +185,7 @@ def build_translator_meta_prompt(prompt: str) -> str:
         "For tasks requiring administrator privileges (like installing software), prefix the command with 'sudo'. "
         "Do not provide any explanation, preamble, or markdown formatting. Just the raw command."
         f"\n\nUser's Operating System: {os_type}"
-        f"\nUser's Prompt: \"{prompt}\""
+        f'\nUser\'s Prompt: "{prompt}"'
         "\n\nCommand:"
     )
 
@@ -174,7 +198,7 @@ def clean_llm_response(text: str) -> str:
         command_lines = command.splitlines()
         if len(command_lines) > 1:
             # Handle cases like ```bash\ncommand\n```
-            command = ' '.join(line for line in command_lines[1:-1] if line.strip())
+            command = " ".join(line for line in command_lines[1:-1] if line.strip())
         else:
             command = command.strip("`")
     # Remove backticks
@@ -195,13 +219,13 @@ def extract_command_from_response(text: str) -> Optional[str]:
 def get_llm_provider() -> LLMProvider:
     """Get the configured LLM provider."""
     config = get_config()
-    provider_type = config.get('llm.provider', 'gemini')
-    
-    if provider_type == 'gemini':
-        gemini_config = config.get('llm.gemini', {})
+    provider_type = config.get("llm.provider", "gemini")
+
+    if provider_type == "gemini":
+        gemini_config = config.get("llm.gemini", {})
         return GeminiProvider(gemini_config)
-    elif provider_type == 'local':
-        local_config = config.get('llm.local', {})
+    elif provider_type == "local":
+        local_config = config.get("llm.local", {})
         return LocalLLMProvider(local_config)
     else:
         raise ValueError(f"Unknown LLM provider: {provider_type}")

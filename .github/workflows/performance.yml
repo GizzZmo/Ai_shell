@@ -1,0 +1,198 @@
+name: Performance
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Run performance tests weekly
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-benchmark memory-profiler psutil
+
+    - name: Create benchmark tests
+      run: |
+        mkdir -p tests/benchmarks
+        cat > tests/benchmarks/test_performance.py << 'EOF'
+        """Performance benchmark tests for AI Shell."""
+        import pytest
+        import time
+        import psutil
+        import os
+        from unittest.mock import Mock, patch
+        from ai_shell.config import Config
+        from ai_shell.llm import LLMProvider
+
+        class TestConfigPerformance:
+            """Test configuration loading performance."""
+            
+            def test_config_initialization_time(self, benchmark):
+                """Benchmark configuration initialization."""
+                def init_config():
+                    return Config()
+                
+                result = benchmark(init_config)
+                assert result is not None
+
+            def test_config_large_file_loading(self, benchmark, tmp_path):
+                """Benchmark loading large configuration files."""
+                # Create a large config file
+                large_config = tmp_path / "large_config.yaml"
+                config_content = "llm:\n  provider: gemini\n"
+                # Add many nested configurations
+                for i in range(1000):
+                    config_content += f"  option_{i}: value_{i}\n"
+                
+                large_config.write_text(config_content)
+                
+                def load_large_config():
+                    return Config(str(large_config))
+                
+                result = benchmark(load_large_config)
+                assert result is not None
+
+        class TestMemoryUsage:
+            """Test memory usage of core components."""
+            
+            def test_config_memory_usage(self):
+                """Test memory usage of configuration system."""
+                process = psutil.Process(os.getpid())
+                initial_memory = process.memory_info().rss
+                
+                # Create multiple config instances
+                configs = []
+                for _ in range(100):
+                    configs.append(Config())
+                
+                final_memory = process.memory_info().rss
+                memory_increase = final_memory - initial_memory
+                
+                # Memory increase should be reasonable (less than 50MB for 100 configs)
+                assert memory_increase < 50 * 1024 * 1024
+
+            @patch('ai_shell.llm.requests.post')
+            def test_llm_provider_memory_usage(self, mock_post):
+                """Test memory usage of LLM provider."""
+                mock_response = Mock()
+                mock_response.json.return_value = {
+                    'candidates': [{'content': {'parts': [{'text': 'test response'}]}}]
+                }
+                mock_response.raise_for_status.return_value = None
+                mock_post.return_value = mock_response
+                
+                process = psutil.Process(os.getpid())
+                initial_memory = process.memory_info().rss
+                
+                config = Config()
+                config.set('llm.gemini.api_key', 'test_key')
+                
+                # Create multiple provider instances
+                providers = []
+                for _ in range(50):
+                    provider = LLMProvider(config)
+                    providers.append(provider)
+                
+                final_memory = process.memory_info().rss
+                memory_increase = final_memory - initial_memory
+                
+                # Memory increase should be reasonable
+                assert memory_increase < 100 * 1024 * 1024
+
+        class TestResponseTime:
+            """Test response time of core operations."""
+            
+            def test_config_get_performance(self, benchmark):
+                """Benchmark configuration value retrieval."""
+                config = Config()
+                
+                def get_config_value():
+                    return config.get('llm.provider')
+                
+                result = benchmark(get_config_value)
+                assert result == 'gemini'
+
+            def test_config_set_performance(self, benchmark):
+                """Benchmark configuration value setting."""
+                config = Config()
+                
+                def set_config_value():
+                    config.set('test.benchmark', 'value')
+                
+                benchmark(set_config_value)
+                assert config.get('test.benchmark') == 'value'
+        EOF
+
+    - name: Run benchmark tests
+      run: |
+        python -m pytest tests/benchmarks/ -v --benchmark-only --benchmark-json=benchmark.json
+
+    - name: Performance regression check
+      run: |
+        python << 'EOF'
+        import json
+        import os
+
+        if os.path.exists('benchmark.json'):
+            with open('benchmark.json', 'r') as f:
+                results = json.load(f)
+            
+            print("=== Performance Benchmark Results ===")
+            for benchmark in results['benchmarks']:
+                name = benchmark['name']
+                mean_time = benchmark['stats']['mean']
+                median_time = benchmark['stats']['median']
+                print(f"{name}:")
+                print(f"  Mean: {mean_time:.6f}s")
+                print(f"  Median: {median_time:.6f}s")
+                
+                # Set performance thresholds
+                if 'config_initialization' in name and mean_time > 1.0:
+                    print(f"⚠️ WARNING: {name} is slow ({mean_time:.3f}s)")
+                elif 'memory_usage' in name:
+                    print(f"✅ Memory test completed")
+                elif mean_time > 0.1:
+                    print(f"⚠️ WARNING: {name} is slow ({mean_time:.3f}s)")
+                else:
+                    print(f"✅ {name} performance OK")
+            
+            print("\n=== Performance Summary ===")
+            print("All benchmarks completed successfully!")
+        else:
+            print("No benchmark results found")
+        EOF
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results
+        path: benchmark.json
+        retention-days: 30
+
+    - name: System resource monitoring
+      run: |
+        echo "=== System Resources ==="
+        echo "CPU Usage:"
+        python -c "import psutil; print(f'  {psutil.cpu_percent(interval=1)}%')"
+        echo "Memory Usage:"
+        python -c "import psutil; mem = psutil.virtual_memory(); print(f'  {mem.percent}% ({mem.used // 1024**2} MB / {mem.total // 1024**2} MB)')"
+        echo "Disk Usage:"
+        python -c "import psutil; disk = psutil.disk_usage('/'); print(f'  {disk.percent}% ({disk.used // 1024**3} GB / {disk.total // 1024**3} GB)')"

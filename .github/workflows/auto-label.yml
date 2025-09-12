@@ -1,0 +1,186 @@
+name: Auto Label
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  label-issues:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues'
+    steps:
+    - name: Label new issues
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const issue = context.payload.issue;
+          const title = issue.title.toLowerCase();
+          const body = issue.body ? issue.body.toLowerCase() : '';
+          
+          let labels = [];
+          
+          // Auto-label based on title/content
+          if (title.includes('bug') || title.includes('error') || title.includes('broken')) {
+            labels.push('bug');
+          }
+          
+          if (title.includes('feature') || title.includes('enhancement') || body.includes('feature request')) {
+            labels.push('enhancement');
+          }
+          
+          if (title.includes('doc') || title.includes('readme') || body.includes('documentation')) {
+            labels.push('documentation');
+          }
+          
+          if (title.includes('security') || body.includes('vulnerability') || body.includes('security')) {
+            labels.push('security');
+          }
+          
+          if (title.includes('performance') || body.includes('slow') || body.includes('performance')) {
+            labels.push('performance');
+          }
+          
+          // Component-based labels
+          if (body.includes('gemini') || body.includes('llm') || body.includes('provider')) {
+            labels.push('llm-integration');
+          }
+          
+          if (body.includes('config') || body.includes('configuration') || body.includes('yaml')) {
+            labels.push('configuration');
+          }
+          
+          if (body.includes('command') || body.includes('execution') || body.includes('shell')) {
+            labels.push('command-execution');
+          }
+          
+          if (body.includes('metasploit') || body.includes('wapiti') || body.includes('security testing')) {
+            labels.push('security-tools');
+          }
+          
+          // Priority labels based on keywords
+          if (title.includes('critical') || body.includes('critical') || 
+              title.includes('urgent') || body.includes('urgent')) {
+            labels.push('high-priority');
+          }
+          
+          // Add needs-triage by default
+          labels.push('needs-triage');
+          
+          if (labels.length > 0) {
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: labels
+            });
+          }
+
+  label-prs:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Label pull requests
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const pr = context.payload.pull_request;
+          const title = pr.title.toLowerCase();
+          const body = pr.body ? pr.body.toLowerCase() : '';
+          
+          let labels = [];
+          
+          // Get changed files
+          const files = await github.rest.pulls.listFiles({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: pr.number
+          });
+          
+          const changedFiles = files.data.map(file => file.filename);
+          const changedContent = changedFiles.join(' ').toLowerCase();
+          
+          // Auto-label based on changed files
+          if (changedFiles.some(file => file.startsWith('.github/workflows/'))) {
+            labels.push('ci-cd');
+          }
+          
+          if (changedFiles.some(file => file.endsWith('.md'))) {
+            labels.push('documentation');
+          }
+          
+          if (changedFiles.some(file => file.includes('test'))) {
+            labels.push('tests');
+          }
+          
+          if (changedFiles.some(file => file.includes('config'))) {
+            labels.push('configuration');
+          }
+          
+          if (changedFiles.some(file => file.includes('llm'))) {
+            labels.push('llm-integration');
+          }
+          
+          if (changedFiles.some(file => file.includes('executor'))) {
+            labels.push('command-execution');
+          }
+          
+          // Size labels based on changes
+          const totalChanges = files.data.reduce((sum, file) => sum + file.changes, 0);
+          if (totalChanges < 10) {
+            labels.push('size/XS');
+          } else if (totalChanges < 50) {
+            labels.push('size/S');
+          } else if (totalChanges < 100) {
+            labels.push('size/M');
+          } else if (totalChanges < 500) {
+            labels.push('size/L');
+          } else {
+            labels.push('size/XL');
+          }
+          
+          // Type labels based on title/content
+          if (title.includes('fix') || title.includes('bug')) {
+            labels.push('bug');
+          }
+          
+          if (title.includes('feat') || title.includes('add') || title.includes('feature')) {
+            labels.push('enhancement');
+          }
+          
+          if (title.includes('deps') || title.includes('dependency')) {
+            labels.push('dependencies');
+          }
+          
+          if (title.includes('perf') || title.includes('performance')) {
+            labels.push('performance');
+          }
+          
+          if (title.includes('refactor')) {
+            labels.push('refactoring');
+          }
+          
+          // Check if PR is draft
+          if (pr.draft) {
+            labels.push('work-in-progress');
+          }
+          
+          if (labels.length > 0) {
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: labels
+            });
+          }

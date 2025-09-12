@@ -6,7 +6,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-passing-green.svg)](#testing)
+# Skip img.shields.io links in your link checker
+if [[ "$link" =~ ^https://img.shields.io/ ]]; then
+  continue
+fi
 [![CI](https://github.com/GizzZmo/Ai_shell/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/GizzZmo/Ai_shell/actions/workflows/ci.yml)
 
 *Transform natural language into powerful shell commands with AI*

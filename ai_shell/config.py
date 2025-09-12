@@ -142,6 +142,8 @@ class Config:
                 "level": "INFO",
                 "file": "ai_shell.log",
                 "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                "audit_enabled": True,
+                "audit_file": "ai_shell_audit.jsonl",
             },
             "training": {"dataset_file": "training_dataset.jsonl", "auto_log": True},
             "security": {

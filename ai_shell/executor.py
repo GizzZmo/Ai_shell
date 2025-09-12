@@ -27,14 +27,40 @@ class SecurityChecker:
                 "wipefs",
                 "shred",
                 "chmod 777",
-                "chown -R root",
+                "chown -r root",
+                "shutdown",
+                "reboot",
+                "halt",
+                "poweroff",
+                "init 0",
+                "init 6",
+                "killall -9",
+                "pkill -9",
+                "forkbomb",
+                ":|:",
+                "nc -l",
+                "netcat -l",
+                "curl",
+                "wget",
+                "del /q /s",
             ],
         )
 
     def is_dangerous_command(self, command: str) -> bool:
         """Check if a command is potentially dangerous."""
-        command_lower = command.lower().strip()
-        return any(dangerous in command_lower for dangerous in self.dangerous_commands)
+        if not command:
+            return False
+            
+        # Normalize command by removing extra whitespace
+        command_normalized = " ".join(command.lower().strip().split())
+        
+        # Check against dangerous patterns
+        for dangerous in self.dangerous_commands:
+            dangerous_normalized = " ".join(dangerous.lower().split())
+            if dangerous_normalized in command_normalized:
+                return True
+        
+        return False
 
     def validate_command(self, command: str) -> Tuple[bool, Optional[str]]:
         """Validate a command for security issues.

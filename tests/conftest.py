@@ -2,7 +2,6 @@
 
 import pytest
 import tempfile
-import os
 from pathlib import Path
 
 
@@ -43,6 +42,6 @@ security:
     - format
 """
     config_path = Path(temp_config_dir) / "config.yaml"
-    with open(config_path, 'w') as f:
+    with open(config_path, "w") as f:
         f.write(config_content)
     return str(config_path)

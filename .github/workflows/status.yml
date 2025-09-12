@@ -1,0 +1,150 @@
+name: Workflow Status
+
+on:
+  workflow_run:
+    workflows: ["CI", "Security", "Documentation", "Performance", "Release"]
+    types:
+      - completed
+  schedule:
+    # Generate status report daily at 8 AM UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  status-report:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Generate workflow status report
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // Get recent workflow runs
+          const workflows = ['CI', 'Security', 'Documentation', 'Performance', 'Release'];
+          let statusReport = '# 🚀 AI Shell - Workflow Status Dashboard\n\n';
+          statusReport += `*Last updated: ${new Date().toISOString()}*\n\n`;
+          
+          const statusTable = [];
+          statusTable.push('| Workflow | Status | Last Run | Duration | Branch |');
+          statusTable.push('|----------|--------|----------|----------|--------|');
+          
+          for (const workflowName of workflows) {
+            try {
+              const runs = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: `${workflowName.toLowerCase()}.yml`,
+                per_page: 1
+              });
+              
+              if (runs.data.workflow_runs.length > 0) {
+                const run = runs.data.workflow_runs[0];
+                const status = run.conclusion || run.status;
+                const statusEmoji = {
+                  'success': '✅',
+                  'failure': '❌',
+                  'cancelled': '⚠️',
+                  'in_progress': '🔄',
+                  'queued': '⏳'
+                }[status] || '❓';
+                
+                const duration = run.run_started_at && run.updated_at ? 
+                  Math.round((new Date(run.updated_at) - new Date(run.run_started_at)) / 1000 / 60) : 'N/A';
+                
+                const lastRun = new Date(run.created_at).toLocaleDateString();
+                const branch = run.head_branch;
+                
+                statusTable.push(`| ${workflowName} | ${statusEmoji} ${status} | ${lastRun} | ${duration}m | ${branch} |`);
+              } else {
+                statusTable.push(`| ${workflowName} | ❓ No runs | N/A | N/A | N/A |`);
+              }
+            } catch (error) {
+              statusTable.push(`| ${workflowName} | ❓ Error | N/A | N/A | N/A |`);
+            }
+          }
+          
+          statusReport += statusTable.join('\n') + '\n\n';
+          
+          // Add repository stats
+          statusReport += '## 📊 Repository Statistics\n\n';
+          
+          // Get repository info
+          const repo = await github.rest.repos.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo
+          });
+          
+          const issues = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open'
+          });
+          
+          const prs = await github.rest.pulls.list({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open'
+          });
+          
+          statusReport += `- **Stars:** ${repo.data.stargazers_count}\n`;
+          statusReport += `- **Forks:** ${repo.data.forks_count}\n`;
+          statusReport += `- **Open Issues:** ${issues.data.length}\n`;
+          statusReport += `- **Open PRs:** ${prs.data.length}\n`;
+          statusReport += `- **Last Updated:** ${new Date(repo.data.updated_at).toLocaleDateString()}\n\n`;
+          
+          // Add workflow badges
+          statusReport += '## 🏆 Workflow Badges\n\n';
+          const baseUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}`;
+          
+          statusReport += `[![CI](${baseUrl}/actions/workflows/ci.yml/badge.svg)](${baseUrl}/actions/workflows/ci.yml) `;
+          statusReport += `[![Security](${baseUrl}/actions/workflows/security.yml/badge.svg)](${baseUrl}/actions/workflows/security.yml) `;
+          statusReport += `[![Documentation](${baseUrl}/actions/workflows/documentation.yml/badge.svg)](${baseUrl}/actions/workflows/documentation.yml)\n\n`;
+          
+          // Add quick links
+          statusReport += '## 🔗 Quick Links\n\n';
+          statusReport += `- [📋 All Workflows](${baseUrl}/actions)\n`;
+          statusReport += `- [🐛 Report Issues](${baseUrl}/issues/new/choose)\n`;
+          statusReport += `- [💡 Discussions](${baseUrl}/discussions)\n`;
+          statusReport += `- [📖 Documentation](${baseUrl}/blob/main/README.md)\n`;
+          statusReport += `- [🤝 Contributing](${baseUrl}/blob/main/CONTRIBUTING.md)\n\n`;
+          
+          statusReport += '---\n';
+          statusReport += '*This dashboard is automatically updated by GitHub Actions.*\n';
+          
+          // Write to file
+          fs.writeFileSync('WORKFLOW_STATUS.md', statusReport);
+          
+          console.log('Generated workflow status report');
+          console.log(statusReport);
+
+    - name: Check if status file changed
+      id: check-changes
+      run: |
+        if git diff --quiet WORKFLOW_STATUS.md; then
+          echo "changed=false" >> $GITHUB_OUTPUT
+        else
+          echo "changed=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Commit status report
+      if: steps.check-changes.outputs.changed == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add WORKFLOW_STATUS.md
+        git commit -m "Update workflow status dashboard [skip ci]" || exit 0
+        git push
+
+    - name: Create status summary
+      run: |
+        echo "## 🚀 Workflow Status Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        cat WORKFLOW_STATUS.md >> $GITHUB_STEP_SUMMARY

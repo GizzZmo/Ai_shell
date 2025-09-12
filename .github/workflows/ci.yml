@@ -10,10 +10,22 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.9", "3.10", "3.11", "3.12"]
+        exclude:
+          # Reduce matrix size for efficiency while maintaining coverage
+          - os: windows-latest
+            python-version: "3.9"
+          - os: windows-latest
+            python-version: "3.10"
+          - os: macos-latest
+            python-version: "3.9"
+          - os: macos-latest
+            python-version: "3.10"
 
     steps:
     - uses: actions/checkout@v4
@@ -29,14 +41,16 @@ jobs:
         pip install -r requirements.txt
         pip install pytest pytest-cov black flake8
 
-    - name: Lint with flake8
+    - name: Lint with flake8 (Ubuntu only)
+      if: matrix.os == 'ubuntu-latest'
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 ai_shell/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings for existing code
         flake8 ai_shell/ tests/ --count --exit-zero --max-complexity=20 --max-line-length=127 --statistics
 
-    - name: Check code formatting with black
+    - name: Check code formatting with black (Ubuntu only)
+      if: matrix.os == 'ubuntu-latest'
       run: |
         # Show formatting differences but don't fail on existing code
         black --check --diff ai_shell/ tests/ || echo "Code formatting issues found but not failing CI"
@@ -46,12 +60,13 @@ jobs:
         python -m pytest tests/ -v --cov=ai_shell --cov-report=xml
 
     - name: Test package installation
+      shell: bash
       run: |
         pip install -e .
         ai-shell --help || echo "Help command completed"
 
     - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.11'
+      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml

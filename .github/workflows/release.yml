@@ -1,0 +1,149 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  discussions: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov black flake8 build
+
+      - name: Run tests
+        run: python -m pytest tests/ -v
+
+      - name: Lint code
+        run: |
+          flake8 ai_shell/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          black --check ai_shell/ tests/
+
+      - name: Build package
+        run: python -m build
+
+  release:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the current tag
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            CURRENT_TAG="${{ github.event.inputs.version }}"
+          else
+            CURRENT_TAG=${GITHUB_REF#refs/tags/}
+          fi
+          
+          # Get the previous tag
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          
+          echo "current_tag=$CURRENT_TAG" >> $GITHUB_OUTPUT
+          echo "previous_tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+          
+          # Generate changelog
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "## Changes since $PREVIOUS_TAG" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD >> CHANGELOG.md
+          else
+            echo "## Initial Release" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "First release of AI Shell" >> CHANGELOG.md
+          fi
+          
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat CHANGELOG.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.changelog.outputs.current_tag }}
+          release_name: Release ${{ steps.changelog.outputs.current_tag }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: false
+          prerelease: ${{ contains(steps.changelog.outputs.current_tag, 'alpha') || contains(steps.changelog.outputs.current_tag, 'beta') || contains(steps.changelog.outputs.current_tag, 'rc') }}
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/
+          asset_name: ai-shell-${{ steps.changelog.outputs.current_tag }}-py3-none-any.whl
+          asset_content_type: application/zip
+
+  publish-pypi:
+    needs: [validate, release]
+    runs-on: ubuntu-latest
+    environment: release
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, 'alpha') && !contains(github.ref, 'beta')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload dist/*

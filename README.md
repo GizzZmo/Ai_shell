@@ -4,13 +4,29 @@
 
 **Your Intelligent Command-Line Copilot**
 
+<!-- Core badges -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![GitHub Release](https://img.shields.io/github/v/release/GizzZmo/Ai_shell?include_prereleases&sort=semver)](https://github.com/GizzZmo/Ai_shell/releases)
+
+<!-- Workflow badges -->
 [![CI](https://github.com/GizzZmo/Ai_shell/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/GizzZmo/Ai_shell/actions/workflows/ci.yml)
+[![Security](https://github.com/GizzZmo/Ai_shell/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/GizzZmo/Ai_shell/actions/workflows/security.yml)
+[![Documentation](https://github.com/GizzZmo/Ai_shell/actions/workflows/documentation.yml/badge.svg?branch=main)](https://github.com/GizzZmo/Ai_shell/actions/workflows/documentation.yml)
+[![Performance](https://github.com/GizzZmo/Ai_shell/actions/workflows/performance.yml/badge.svg?branch=main)](https://github.com/GizzZmo/Ai_shell/actions/workflows/performance.yml)
+
+<!-- Quality badges -->
+[![Codecov](https://codecov.io/gh/GizzZmo/Ai_shell/branch/main/graph/badge.svg)](https://codecov.io/gh/GizzZmo/Ai_shell)
+[![CodeQL](https://github.com/GizzZmo/Ai_shell/workflows/Security/badge.svg)](https://github.com/GizzZmo/Ai_shell/security/code-scanning)
+
+<!-- Community badges -->
+[![GitHub issues](https://img.shields.io/github/issues/GizzZmo/Ai_shell)](https://github.com/GizzZmo/Ai_shell/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/GizzZmo/Ai_shell)](https://github.com/GizzZmo/Ai_shell/pulls)
+[![GitHub stars](https://img.shields.io/github/stars/GizzZmo/Ai_shell?style=social)](https://github.com/GizzZmo/Ai_shell/stargazers)
 
 *Transform natural language into powerful shell commands with AI*
 
-[🚀 Quick Start](#quick-start) • [📖 Documentation](#documentation) • [🤝 Contributing](CONTRIBUTING.md) • [🐛 Issues](https://github.com/GizzZmo/Ai_shell/issues)
+[🚀 Quick Start](#quick-start) • [📖 Documentation](#documentation) • [🤝 Contributing](CONTRIBUTING.md) • [🐛 Issues](https://github.com/GizzZmo/Ai_shell/issues) • [📊 Workflow Status](WORKFLOW_STATUS.md)
 
 </div>
 
@@ -233,6 +249,75 @@ flake8 ai_shell/ tests/
 - **Command Review**: Always review before execution
 - **Local LLMs**: Consider for sensitive environments
 - **Network Security**: Be cautious with cloud providers
+
+## 🔄 CI/CD & Workflow System
+
+AI Shell uses a comprehensive GitHub Actions workflow system to ensure code quality, security, and reliability:
+
+### 🛠️ Automated Workflows
+
+#### **Continuous Integration (CI)**
+- ✅ **Multi-OS Testing**: Tests run on Ubuntu, Windows, and macOS
+- ✅ **Python Versions**: Supports Python 3.9, 3.10, 3.11, and 3.12
+- ✅ **Code Quality**: Automated linting with flake8 and formatting checks with black
+- ✅ **Test Coverage**: pytest with coverage reporting to Codecov
+- ✅ **Package Installation**: Validates the package can be installed and used
+
+#### **Security Scanning**
+- 🔒 **CodeQL Analysis**: Advanced code security scanning with extended queries
+- 🔒 **Dependency Scanning**: Automated vulnerability checks using Safety
+- 🔒 **Secrets Detection**: Trivy scans for exposed secrets in the codebase
+- 🔒 **License Compliance**: Verifies all dependencies use compatible licenses
+- 🔒 **Scheduled Scans**: Daily security checks to catch new vulnerabilities
+
+#### **Documentation**
+- 📖 **Markdown Validation**: Ensures all documentation is syntactically correct
+- 📖 **Link Checking**: Validates internal and external links
+- 📖 **Code Example Testing**: Verifies Python code examples in documentation
+- 📖 **Automated Deployment**: Builds and deploys docs to GitHub Pages with MkDocs
+- 📖 **Material Theme**: Beautiful, searchable documentation site
+
+#### **Performance Monitoring**
+- ⚡ **Benchmark Tests**: Measures performance of core components
+- ⚡ **Memory Profiling**: Tracks memory usage and detects leaks
+- ⚡ **Response Time Monitoring**: Ensures operations meet performance targets
+- ⚡ **Weekly Runs**: Regular performance regression testing
+
+#### **Release Automation**
+- 🚀 **Automated Releases**: Tag-based releases to GitHub and PyPI
+- 🚀 **Changelog Generation**: Automatic changelog from git commits
+- 🚀 **Package Building**: Builds and validates distribution packages
+- 🚀 **Pre-release Support**: Handles alpha, beta, and RC releases
+
+#### **Smart Automation**
+- 🏷️ **Auto-labeling**: Automatically labels issues and PRs based on content
+- 🏷️ **Size Detection**: Labels PRs by change size (XS, S, M, L, XL)
+- 🏷️ **Component Detection**: Labels based on changed files and components
+- 📊 **Status Dashboard**: Daily workflow status reports and repository statistics
+
+### 📊 Workflow Status
+
+Check our [Workflow Status Dashboard](WORKFLOW_STATUS.md) for real-time status of all workflows, or view the [Actions tab](https://github.com/GizzZmo/Ai_shell/actions) for detailed run history.
+
+### 🔧 Running Workflows Locally
+
+You can run tests and checks locally before pushing:
+
+```bash
+# Run tests
+python -m pytest tests/ -v --cov=ai_shell
+
+# Check code style
+flake8 ai_shell/ tests/
+black --check ai_shell/ tests/
+
+# Run security checks
+pip install safety
+safety check
+
+# Run performance benchmarks
+python -m pytest tests/benchmarks/ --benchmark-only
+```
 
 ## 🤝 Contributing
 

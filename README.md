@@ -26,7 +26,8 @@
 
 *Transform natural language into powerful shell commands with AI*
 
-[🚀 Quick Start](#quick-start) • [📖 Documentation](#documentation) • [🤝 Contributing](CONTRIBUTING.md) • [🐛 Issues](https://github.com/GizzZmo/Ai_shell/issues) • [📊 Workflow Status](WORKFLOW_STATUS.md)
+[🚀 Quick Start](#quick-start) • [📖 Documentation](#documentation) • [🤝 Contributing](CONTRIBUTING.md)  
+[🐛 Issues](https://github.com/GizzZmo/Ai_shell/issues) • [📊 Workflow Status](WORKFLOW_STATUS.md)
 
 </div>
 

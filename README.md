@@ -153,6 +153,7 @@ ai-shell
 ai-shell --mode translator
 ai-shell --mode assistant 
 ai-shell --mode metasploit
+ai-shell --mode wapiti
 
 # Specify provider
 ai-shell --provider local
@@ -160,48 +161,22 @@ ai-shell --provider gemini --api-key your_key
 
 # Use custom config
 ai-shell --config myconfig.yaml
+
+# Adjust safety and logging
+ai-shell --no-confirmation
+ai-shell --log-level DEBUG
 ```
+
+For a full CLI reference and mode-by-mode walkthrough, see [docs/USAGE.md](docs/USAGE.md).
 
 ## 📖 Documentation
 
-### Configuration
-
-The `config.yaml` file allows you to customize AI Shell's behavior:
-
-```yaml
-llm:
-  provider: gemini  # or 'local'
-  gemini:
-    api_key: ""
-    model: gemini-1.5-flash
-  local:
-    host: localhost
-    port: 11434
-    model: llama3
-
-security:
-  require_confirmation: true
-  dangerous_commands:
-    - rm -rf
-    - format
-    - dd if=
-
-logging:
-  level: INFO
-  file: ai_shell.log
-```
-
-### Environment Variables
-
-- `GEMINI_API_KEY`: Your Google Gemini API key
-- `AI_SHELL_CONFIG`: Path to custom configuration file
-
-### Security Features
-
-- **Command Validation**: Blocks dangerous commands
-- **User Confirmation**: Requires approval before execution
-- **Input Sanitization**: Protects against command injection
-- **Configurable Restrictions**: Customizable safety lists
+Browse focused guides:
+- [Usage Guide](docs/USAGE.md) — CLI flags, modes, and provider selection  
+- [Configuration Guide](docs/CONFIGURATION.md) — config structure, profiles, and templates  
+- [Architecture Overview](docs/ARCHITECTURE.md) — component and data-flow diagrams  
+- [Examples & Tutorials](docs/EXAMPLES.md) — practical prompts and scripts  
+- [Troubleshooting](docs/TROUBLESHOOTING.md) — common fixes and debugging tips  
 
 ## 🔧 Development
 
@@ -216,7 +191,7 @@ ai_shell/
 │   ├── executor.py     # Command execution and security
 │   └── ui.py           # User interface utilities
 ├── tests/              # Test suite
-├── docs/               # Documentation (coming soon)
+├── docs/               # Documentation guides
 ├── setup.py            # Package setup
 └── requirements.txt    # Dependencies
 ```

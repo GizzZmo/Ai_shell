@@ -5,7 +5,7 @@ This guide summarizes how to run AI Shell from the command line, select operatin
 ## ⚙️ Command-Line Quick Reference
 
 | Option | Description |
-| --- | --- |
+| ------ | ----------- |
 | `--mode {translator,assistant,metasploit,wapiti}` | Run a specific mode without the interactive selector. |
 | `--provider {gemini,local}` | Choose the LLM backend (Gemini API or local Ollama). |
 | `--config <file>` | Path to a custom YAML configuration file. |
@@ -41,14 +41,14 @@ Configuration precedence follows: **CLI flags → environment variables → `con
 ## 🤖 Provider Setup
 
 ### Gemini (Cloud)
-1. Export your key: `export GEMINI_API_KEY="your_key"`.
-2. Run with `--provider gemini` or set `llm.provider: gemini` in `config.yaml`.
-3. You can override the key per run with `--api-key`.
+- Export your key: `export GEMINI_API_KEY="your_key"`.
+- Run with `--provider gemini` or set `llm.provider: gemini` in `config.yaml`.
+- You can override the key per run with `--api-key`.
 
 ### Local (Ollama)
-1. Install Ollama and pull a model (e.g., `ollama pull llama3`).
-2. Start AI Shell with `--provider local`; the guided prompt helps select a model and host/port.
-3. Connection details are stored in the config for future runs.
+- Install Ollama and pull a model (e.g., `ollama pull llama3`).
+- Start AI Shell with `--provider local`; the guided prompt helps select a model and host/port.
+- Connection details are stored in the config for future runs.
 
 ## 🛡️ Security & Confirmation
 
@@ -62,4 +62,3 @@ Configuration precedence follows: **CLI flags → environment variables → `con
 - **Architecture overview:** [docs/ARCHITECTURE.md](ARCHITECTURE.md)  
 - **Examples & tutorials:** [docs/EXAMPLES.md](EXAMPLES.md)  
 - **Troubleshooting tips:** [docs/TROUBLESHOOTING.md](TROUBLESHOOTING.md)
-

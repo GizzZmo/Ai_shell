@@ -162,6 +162,7 @@ ai-shell --provider gemini --api-key your_key
 # Use custom config
 ai-shell --config myconfig.yaml
 
+
 # Adjust safety and logging
 ai-shell --no-confirmation
 ai-shell --log-level DEBUG

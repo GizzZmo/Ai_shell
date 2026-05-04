@@ -603,6 +603,6 @@ training:
 5. **Document custom configurations**
 
 For more detailed information, see:
-- [Architecture Documentation](docs/ARCHITECTURE.md)
-- [Examples and Tutorials](docs/EXAMPLES.md)
-- [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
+- [Architecture Documentation](ARCHITECTURE.md)
+- [Examples and Tutorials](EXAMPLES.md)
+- [Troubleshooting Guide](TROUBLESHOOTING.md)

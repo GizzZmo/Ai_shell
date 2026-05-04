@@ -61,20 +61,41 @@ jobs:
 
     - name: Check internal links
       run: |
-        # Check for broken internal links in markdown files
-        find . -name "*.md" -not -path "./node_modules/*" -not -path "./.git/*" | while read file; do
-          echo "Checking internal links in $file"
-          # Extract relative links and check if files exist
-          grep -oE '\[.*\]\([^http][^)]*\)' "$file" | grep -oE '\([^)]*\)' | tr -d '()' | while read link; do
-            if [[ -n "$link" && "$link" != "#"* ]]; then
-              target_file=$(dirname "$file")/"$link"
-              if [[ ! -f "$target_file" && ! -d "$target_file" ]]; then
-                echo "❌ Broken internal link in $file: $link"
-                exit 1
-              fi
-            fi
-          done
-        done
+        python -c "
+        import re, glob, os, sys
+
+        def extract_links(content):
+            # Remove fenced code blocks to avoid matching code patterns as links
+            content = re.sub(r'\`\`\`.*?\`\`\`', '', content, flags=re.DOTALL)
+            # Remove inline code spans
+            content = re.sub(r'\`[^\`]+\`', '', content)
+            # Find all markdown links: [text](url)
+            return re.findall(r'\[[^\]]*\]\(([^)]+)\)', content)
+
+        broken = []
+        for f in sorted(glob.glob('**/*.md', recursive=True)):
+            if '/.git/' in f or '/node_modules/' in f:
+                continue
+            with open(f) as file:
+                content = file.read()
+            for link in extract_links(content):
+                # Skip external links and anchor-only links
+                if link.startswith('http') or link.startswith('#') or link.startswith('mailto:'):
+                    continue
+                # Strip any anchor fragment from the path
+                path_part = link.split('#')[0]
+                if not path_part:
+                    continue
+                target = os.path.normpath(os.path.join(os.path.dirname(f), path_part))
+                if not os.path.exists(target):
+                    print(f'Broken internal link in {f}: {link}')
+                    broken.append((f, link))
+                else:
+                    print(f'OK in {f}: {link}')
+
+        if broken:
+            sys.exit(1)
+        "
 
     - name: Check documentation completeness
       run: |

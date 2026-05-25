@@ -14,6 +14,7 @@
 [![Security](https://github.com/GizzZmo/Ai_shell/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/GizzZmo/Ai_shell/actions/workflows/security.yml)
 [![Documentation](https://github.com/GizzZmo/Ai_shell/actions/workflows/documentation.yml/badge.svg?branch=main)](https://github.com/GizzZmo/Ai_shell/actions/workflows/documentation.yml)
 [![Performance](https://github.com/GizzZmo/Ai_shell/actions/workflows/performance.yml/badge.svg?branch=main)](https://github.com/GizzZmo/Ai_shell/actions/workflows/performance.yml)
+[![Deployment Assets](https://github.com/GizzZmo/Ai_shell/actions/workflows/deployment-assets.yml/badge.svg?branch=main)](https://github.com/GizzZmo/Ai_shell/actions/workflows/deployment-assets.yml)
 
 <!-- Quality badges -->
 [![Codecov](https://codecov.io/gh/GizzZmo/Ai_shell/branch/main/graph/badge.svg)](https://codecov.io/gh/GizzZmo/Ai_shell)

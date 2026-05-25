@@ -10,6 +10,7 @@
 | **Security** | [![Security](https://github.com/GizzZmo/Ai_shell/actions/workflows/security.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/security.yml) | CodeQL analysis, dependency scanning, and secrets detection |
 | **Documentation** | [![Documentation](https://github.com/GizzZmo/Ai_shell/actions/workflows/documentation.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/documentation.yml) | Documentation validation and GitHub Pages deployment |
 | **Performance** | [![Performance](https://github.com/GizzZmo/Ai_shell/actions/workflows/performance.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/performance.yml) | Benchmark tests and performance monitoring |
+| **Deployment Assets** | [![Deployment Assets](https://github.com/GizzZmo/Ai_shell/actions/workflows/deployment-assets.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/deployment-assets.yml) | Distribution artifact generation and tag-based release asset deployment |
 | **Release** | [![Release](https://github.com/GizzZmo/Ai_shell/actions/workflows/release.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/release.yml) | Automated releases to GitHub and PyPI |
 | **Auto Label** | [![Auto Label](https://github.com/GizzZmo/Ai_shell/actions/workflows/auto-label.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/auto-label.yml) | Automatic issue and PR labeling |
 | **Workflow Status** | [![Workflow Status](https://github.com/GizzZmo/Ai_shell/actions/workflows/status.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions) | Generates this status dashboard |
@@ -48,6 +49,12 @@
 - **Push**: Runs on push to `main` or `master` branches
 - **Pull Request**: Runs on all PRs to `main` or `master`
 - **Schedule**: Weekly on Mondays at 2 AM UTC
+- **Manual**: Can be triggered manually via workflow_dispatch
+
+### Deployment Assets
+- **Push**: Builds distribution assets on push to `main` or `master`
+- **Pull Request**: Builds and validates distributable artifacts in PRs
+- **Tag**: Creates GitHub release assets when a `v*` tag is pushed
 - **Manual**: Can be triggered manually via workflow_dispatch
 
 ### Release

@@ -2,7 +2,7 @@ name: Workflow Status
 
 on:
   workflow_run:
-    workflows: ["CI", "Security", "Documentation", "Performance", "Release"]
+    workflows: ["CI", "Security", "Documentation", "Performance", "Release", "deployment-assets"]
     types:
       - completed
   schedule:
@@ -28,7 +28,7 @@ jobs:
           const fs = require('fs');
           
           // Get recent workflow runs
-          const workflows = ['CI', 'Security', 'Documentation', 'Performance', 'Release'];
+          const workflows = ['CI', 'Security', 'Documentation', 'Performance', 'Release', 'deployment-assets'];
           let statusReport = '# 🚀 AI Shell - Workflow Status Dashboard\n\n';
           statusReport += `*Last updated: ${new Date().toISOString()}*\n\n`;
           
@@ -106,7 +106,8 @@ jobs:
           
           statusReport += `[![CI](${baseUrl}/actions/workflows/ci.yml/badge.svg)](${baseUrl}/actions/workflows/ci.yml) `;
           statusReport += `[![Security](${baseUrl}/actions/workflows/security.yml/badge.svg)](${baseUrl}/actions/workflows/security.yml) `;
-          statusReport += `[![Documentation](${baseUrl}/actions/workflows/documentation.yml/badge.svg)](${baseUrl}/actions/workflows/documentation.yml)\n\n`;
+          statusReport += `[![Documentation](${baseUrl}/actions/workflows/documentation.yml/badge.svg)](${baseUrl}/actions/workflows/documentation.yml) `;
+          statusReport += `[![Deployment Assets](${baseUrl}/actions/workflows/deployment-assets.yml/badge.svg)](${baseUrl}/actions/workflows/deployment-assets.yml)\n\n`;
           
           // Add quick links
           statusReport += '## 🔗 Quick Links\n\n';

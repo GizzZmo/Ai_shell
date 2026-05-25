@@ -1,74 +1,27 @@
 # 🚀 AI Shell - Workflow Status Dashboard
 
-*This dashboard is automatically updated by GitHub Actions*
+*Last updated: 2026-05-25T02:22:37.872Z*
 
-## 📋 Workflow Status
+| Workflow | Status | Last Run | Duration | Branch |
+|----------|--------|----------|----------|--------|
+| CI | 🔄 in_progress | 5/25/2026 | 0m | main |
+| Security | ✅ success | 12/16/2025 | 1m | main |
+| Documentation | 🔄 in_progress | 5/25/2026 | 0m | main |
+| Performance | ✅ success | 12/22/2025 | 0m | main |
+| Release | ❓ No runs | N/A | N/A | N/A |
+| deployment-assets | ❌ failure | 5/25/2026 | 0m | main |
 
-| Workflow | Status | Description |
-|----------|--------|-------------|
-| **CI** | [![CI](https://github.com/GizzZmo/Ai_shell/actions/workflows/ci.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/ci.yml) | Continuous integration with multi-OS and multi-Python version testing |
-| **Security** | [![Security](https://github.com/GizzZmo/Ai_shell/actions/workflows/security.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/security.yml) | CodeQL analysis, dependency scanning, and secrets detection |
-| **Documentation** | [![Documentation](https://github.com/GizzZmo/Ai_shell/actions/workflows/documentation.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/documentation.yml) | Documentation validation and GitHub Pages deployment |
-| **Performance** | [![Performance](https://github.com/GizzZmo/Ai_shell/actions/workflows/performance.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/performance.yml) | Benchmark tests and performance monitoring |
-| **Deployment Assets** | [![Deployment Assets](https://github.com/GizzZmo/Ai_shell/actions/workflows/deployment-assets.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/deployment-assets.yml) | Distribution artifact generation and tag-based release asset deployment |
-| **Release** | [![Release](https://github.com/GizzZmo/Ai_shell/actions/workflows/release.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/release.yml) | Automated releases to GitHub and PyPI |
-| **Auto Label** | [![Auto Label](https://github.com/GizzZmo/Ai_shell/actions/workflows/auto-label.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/auto-label.yml) | Automatic issue and PR labeling |
-| **Workflow Status** | [![Workflow Status](https://github.com/GizzZmo/Ai_shell/actions/workflows/status.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions) | Generates this status dashboard |
+## 📊 Repository Statistics
 
-## 📊 Repository Health
+- **Stars:** 2
+- **Forks:** 0
+- **Open Issues:** 0
+- **Open PRs:** 0
+- **Last Updated:** 5/25/2026
 
-### Code Quality
-- **Test Coverage**: [![Codecov](https://codecov.io/gh/GizzZmo/Ai_shell/branch/main/graph/badge.svg)](https://codecov.io/gh/GizzZmo/Ai_shell)
-- **Code Security**: [![CodeQL](https://github.com/GizzZmo/Ai_shell/workflows/Security/badge.svg)](https://github.com/GizzZmo/Ai_shell/security/code-scanning)
-- **License**: [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+## 🏆 Workflow Badges
 
-### Build Status by Platform
-- **Ubuntu**: Tests run on latest Ubuntu with Python 3.9-3.12
-- **Windows**: Tests run on latest Windows with Python 3.11-3.12
-- **macOS**: Tests run on latest macOS with Python 3.11-3.12
-
-## 🔄 Workflow Triggers
-
-### Continuous Integration (CI)
-- **Push**: Runs on push to `main` or `master` branches
-- **Pull Request**: Runs on all PRs to `main` or `master`
-- **Manual**: Can be triggered manually via workflow_dispatch
-
-### Security
-- **Push**: Runs on push to `main` or `master` branches
-- **Pull Request**: Runs on all PRs to `main` or `master`
-- **Schedule**: Daily at 6 AM UTC
-- **Manual**: Can be triggered manually via workflow_dispatch
-
-### Documentation
-- **Push**: Runs when documentation files are modified
-- **Pull Request**: Validates docs in PRs
-- **Manual**: Can be triggered manually via workflow_dispatch
-
-### Performance
-- **Push**: Runs on push to `main` or `master` branches
-- **Pull Request**: Runs on all PRs to `main` or `master`
-- **Schedule**: Weekly on Mondays at 2 AM UTC
-- **Manual**: Can be triggered manually via workflow_dispatch
-
-### Deployment Assets
-- **Push**: Builds distribution assets on push to `main` or `master`
-- **Pull Request**: Builds and validates distributable artifacts in PRs
-- **Tag**: Creates GitHub release assets when a `v*` tag is pushed
-- **Manual**: Can be triggered manually via workflow_dispatch
-
-### Release
-- **Tag**: Runs automatically when a version tag is pushed (e.g., `v1.0.0`)
-- **Manual**: Can be triggered manually with custom version input
-
-### Auto Label
-- **Issues**: Automatically labels new issues based on content
-- **Pull Requests**: Automatically labels PRs based on changed files
-
-### Workflow Status
-- **Workflow Completion**: Updates after any workflow completes
-- **Schedule**: Daily status report at 8 AM UTC
-- **Manual**: Can be triggered manually via workflow_dispatch
+[![CI](https://github.com/GizzZmo/Ai_shell/actions/workflows/ci.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/ci.yml) [![Security](https://github.com/GizzZmo/Ai_shell/actions/workflows/security.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/security.yml) [![Documentation](https://github.com/GizzZmo/Ai_shell/actions/workflows/documentation.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/documentation.yml) [![Deployment Assets](https://github.com/GizzZmo/Ai_shell/actions/workflows/deployment-assets.yml/badge.svg)](https://github.com/GizzZmo/Ai_shell/actions/workflows/deployment-assets.yml)
 
 ## 🔗 Quick Links
 
@@ -77,49 +30,6 @@
 - [💡 Discussions](https://github.com/GizzZmo/Ai_shell/discussions)
 - [📖 Documentation](https://github.com/GizzZmo/Ai_shell/blob/main/README.md)
 - [🤝 Contributing](https://github.com/GizzZmo/Ai_shell/blob/main/CONTRIBUTING.md)
-- [📦 Latest Release](https://github.com/GizzZmo/Ai_shell/releases/latest)
-
-## 📈 Workflow Details
-
-### CI Workflow Features
-- Multi-OS testing (Ubuntu, Windows, macOS)
-- Multi-version Python support (3.9-3.12)
-- Code linting with flake8
-- Code formatting checks with black
-- Comprehensive test suite with pytest
-- Code coverage reporting to Codecov
-- Package installation validation
-
-### Security Workflow Features
-- CodeQL static analysis with extended security queries
-- Dependency vulnerability scanning with Safety
-- Secrets detection with Trivy
-- License compliance checking
-- SARIF report generation for Security tab
-
-### Documentation Workflow Features
-- Markdown syntax validation
-- Internal link checking
-- Code example validation
-- MkDocs site generation
-- Automatic deployment to GitHub Pages
-- Material theme with search functionality
-
-### Performance Workflow Features
-- Benchmark tests for core components
-- Memory profiling and leak detection
-- Response time monitoring
-- Performance regression detection
-- Artifact retention for comparison
-
-### Release Workflow Features
-- Automated changelog generation
-- GitHub release creation
-- PyPI package publishing
-- Pre-release support (alpha, beta, rc)
-- Asset uploading
 
 ---
-
-*This file is automatically updated daily at 8 AM UTC and after each workflow completion by the Workflow Status action*  
-*Status dashboard generated by: [status.yml](.github/workflows/status.yml)*
+*This dashboard is automatically updated by GitHub Actions.*

@@ -374,123 +374,55 @@ Create different configurations for different contexts:
 **Using Profiles:**
 ```bash
 ai-shell --config ~/.ai_shell/config/development.yaml
-ai-shell --profile work
+ai-shell --config ~/.ai_shell/profiles/work.yaml
 ```
 
-### Dynamic Configuration
+### Dynamic Configuration via Environment Variables
 
-```yaml
-# config.yaml with dynamic elements
-llm:
-  provider: !ENV ${AI_SHELL_PROVIDER:gemini}  # Default to gemini
-  gemini:
-    api_key: !ENV ${GEMINI_API_KEY}
-    model: !ENV ${GEMINI_MODEL:gemini-1.5-flash}
-  
-security:
-  require_confirmation: !ENV ${AI_SHELL_CONFIRM:true}
-  dangerous_commands: !INCLUDE dangerous_commands.yaml
+AI Shell reads environment variables directly in code. Use them to override config values without editing `config.yaml`:
 
-logging:
-  level: !ENV ${LOG_LEVEL:INFO}
-  file: !ENV ${LOG_FILE:ai_shell.log}
+```bash
+export GEMINI_API_KEY="your_key_here"   # Read by config.py default config
 ```
+
+The configuration hierarchy is: **CLI flags → environment variables → `config.yaml` → defaults**.
 
 ### Configuration Validation
 
-AI Shell validates your configuration on startup:
+AI Shell validates your configuration on startup. If a config file contains invalid YAML or unreadable values, it falls back to defaults and prints a warning.
 
-```bash
-# Test configuration
-ai-shell --config config.yaml --validate-config
+**Common Issues:**
+- Missing required API keys — set `GEMINI_API_KEY` env var or add to `config.yaml`
+- Invalid YAML syntax — validate with `python -c "import yaml; yaml.safe_load(open('config.yaml'))"`
+- Wrong model names — see supported models listed in each provider section
 
-# Show effective configuration
-ai-shell --show-config
-```
+## 🎨 UI & Colors
 
-**Common Validation Errors:**
-- Missing required API keys
-- Invalid model names
-- Malformed YAML syntax
-- Conflicting security settings
+Terminal colors are controlled via the `colorama` library and are applied automatically. Colorama is listed in `requirements.txt` and provides ANSI color support on Windows as well as Linux/macOS.
 
-## 🎨 UI Configuration
-
-### Terminal Appearance
-
-```yaml
-ui:
-  colors:
-    primary: cyan
-    secondary: magenta
-    success: green
-    warning: yellow
-    error: red
-    info: blue
-  
-  formatting:
-    banner: true
-    timestamps: true
-    command_highlighting: true
-    progress_bars: true
-  
-  terminal:
-    width: auto  # or specific number
-    pager: less
-    editor: nano  # or vim, emacs, code
-```
-
-### Output Formatting
-
-```yaml
-ui:
-  output:
-    stream_commands: true  # Show output in real-time
-    buffer_size: 4096
-    max_lines: 1000
-    truncate_long_output: true
-    
-  prompts:
-    show_mode: true
-    show_provider: true
-    custom_prompt: "AI> "
-    
-  notifications:
-    sound: false
-    desktop: true  # Desktop notifications
-```
+No additional YAML configuration is required for UI appearance.
 
 ## 🔍 Debugging Configuration
 
-### Debug Mode
-
-```yaml
-debug:
-  enabled: true
-  verbose: true
-  save_requests: true
-  save_responses: true
-  request_file: debug_requests.json
-  response_file: debug_responses.json
-  
-  # Performance monitoring
-  profile: true
-  timing: true
-  memory_usage: true
-```
-
-### Troubleshooting Configuration
+Enable verbose logging via the CLI or config file:
 
 ```bash
-# Enable maximum debugging
-export AI_SHELL_DEBUG=1
-export AI_SHELL_VERBOSE=1
+# Enable debug logging at runtime
 ai-shell --log-level DEBUG
 
-# Test specific components
-ai-shell --test-llm
-ai-shell --test-config
-ai-shell --test-security
+# Or set in config.yaml
+```
+
+```yaml
+logging:
+  level: DEBUG
+  file: ai_shell.log
+```
+
+Then tail the log:
+
+```bash
+tail -f ai_shell.log
 ```
 
 ## 📝 Configuration Templates

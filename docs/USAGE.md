@@ -54,7 +54,7 @@ Configuration precedence follows: **CLI flags → environment variables → `con
 
 - By default, AI Shell validates commands and asks for confirmation before executing.
 - Use `--no-confirmation` for automation or when running in a controlled environment.
-- Adjust safety lists in `config.yaml` under `security.dangerous_commands` and `security.safe_commands`.
+- Adjust the blocked command patterns via `security.dangerous_commands` in `config.yaml`.
 
 ## 📚 Where to Go Next
 

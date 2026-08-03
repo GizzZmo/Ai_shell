@@ -59,7 +59,8 @@ This document provides a comprehensive overview of AI Shell's architecture, desi
 - `main()`: Primary application entry point
 - `setup_logging()`: Logging configuration
 - `parse_arguments()`: CLI argument handling
-- `interactive_pty_session()`: PTY-based tool integration
+- `pty_loop_base()`: Generic PTY-based tool integration loop
+- `metasploit_loop()` / `wapiti_loop()`: Mode-specific async PTY wrappers
 
 **Design Patterns:**
 - Command Pattern: Mode selection and execution
@@ -114,26 +115,30 @@ training:
 **Architecture:**
 ```python
 # Base Provider Interface
-class LLMProvider(ABC):
-    @abstractmethod
-    async def generate_response(self, prompt: str, system_prompt: str = "") -> str
-    
-    @abstractmethod
-    def is_available(self) -> bool
+class LLMProvider:
+    def generate_response(
+        self,
+        prompt: str,
+        mode: str,
+        system_prompt: str = ASSISTANT_SYSTEM_PROMPT,
+        chat_session: Any = None,
+    ) -> Tuple[Optional[str], Any]:
+        raise NotImplementedError
 
 # Concrete Implementations
-class GeminiProvider(LLMProvider)
-class LocalLLMProvider(LLMProvider)
+class GeminiProvider(LLMProvider)      # Google Gemini via google-generativeai
+class LocalLLMProvider(LLMProvider)    # Local models via Ollama REST API
 ```
 
 **Provider Selection Logic:**
 ```python
-def get_llm_provider(provider_name: str, config: Config) -> LLMProvider:
-    providers = {
-        'gemini': GeminiProvider,
-        'local': LocalLLMProvider
-    }
-    return providers[provider_name](config)
+def get_llm_provider() -> LLMProvider:
+    config = get_config()
+    provider_type = config.get("llm.provider", "gemini")
+    if provider_type == "gemini":
+        return GeminiProvider(config.get("llm.gemini", {}))
+    elif provider_type == "local":
+        return LocalLLMProvider(config.get("llm.local", {}))
 ```
 
 **System Prompts:**
@@ -146,12 +151,17 @@ def get_llm_provider(provider_name: str, config: Config) -> LLMProvider:
 
 **Security Architecture:**
 ```python
-class CommandExecutor:
-    def __init__(self, config: Config)
-    
-    def validate_command(self, command: str) -> ValidationResult
-    def execute_command(self, command: str, confirm: bool = True) -> ExecutionResult
+class SecurityChecker:
     def is_dangerous_command(self, command: str) -> bool
+    def validate_command(self, command: str) -> Tuple[bool, Optional[str]]
+
+class CommandExecutor:
+    def execute_command(self, command: str, user_prompt: str) -> bool
+
+class TrainingDataLogger:
+    def log_training_pair(self, prompt: str, command: str, feedback: str) -> None
+
+def get_executor() -> CommandExecutor   # Returns global singleton instance
 ```
 
 **Security Layers:**

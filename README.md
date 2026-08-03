@@ -45,6 +45,8 @@ Whether you're a beginner learning the command line or a seasoned expert looking
 - **🔄 Multi-Modal Architecture**: Four distinct operating modes for different use cases
 - **🧠 Advanced LLM Integration**: Support for both cloud (Gemini) and local (Ollama) models
 - **🔒 Security-First Design**: Built-in command validation and user confirmation
+- **📊 Command Audit Logging**: Comprehensive security tracking and compliance reporting
+- **🛡️ Enhanced Threat Detection**: 25+ dangerous command patterns with smart matching
 - **💬 Conversational Memory**: Context-aware responses with chat history
 - **🛠️ Tool Integration**: Native PTY-based support for penetration testing and web scanning workflows
 - **📊 Learning Capability**: Feedback loop for continuous improvement via training data collection

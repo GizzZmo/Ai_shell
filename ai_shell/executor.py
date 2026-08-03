@@ -8,6 +8,7 @@ from typing import Optional, Tuple
 
 from .config import get_config
 from .ui import colors, format_error, format_warning, format_info, format_success
+from .audit import get_audit_logger
 
 
 class SecurityChecker:
@@ -135,6 +136,7 @@ class CommandExecutor:
     def __init__(self):
         self.security_checker = SecurityChecker()
         self.training_logger = TrainingDataLogger()
+        self.audit_logger = get_audit_logger()
         self.config = get_config()
 
     def execute_command(self, command: str, user_prompt: str) -> bool:
@@ -151,10 +153,21 @@ class CommandExecutor:
         is_valid, warning = self.security_checker.validate_command(command)
         if not is_valid:
             print(format_error(warning))
+            # Log blocked command attempt
+            self.audit_logger.log_command_attempt(
+                command, user_prompt, "blocked", warning
+            )
             return False
 
         if warning:
             print(format_warning(warning))
+            # Log warning
+            self.audit_logger.log_command_attempt(
+                command, user_prompt, "warning", warning
+            )
+        else:
+            # Log allowed command attempt
+            self.audit_logger.log_command_attempt(command, user_prompt, "allowed")
 
         # Display command and ask for confirmation
         print(
@@ -180,6 +193,8 @@ class CommandExecutor:
 
     def _run_command(self, command: str, user_prompt: str) -> bool:
         """Run the command and handle output."""
+        start_time = time.time()
+        
         try:
             print(f"\n{format_info('--- Command Output ---')}")
 
@@ -205,7 +220,13 @@ class CommandExecutor:
                 process.stdout.close()
 
             return_code = process.wait()
+            execution_time = time.time() - start_time
             print(f"\n{format_info('----------------------')}")
+
+            # Log command execution
+            self.audit_logger.log_command_execution(
+                command, user_prompt, return_code, execution_time
+            )
 
             # Handle feedback and logging
             if return_code == 0:
@@ -220,9 +241,17 @@ class CommandExecutor:
         except FileNotFoundError:
             command_name = shlex.split(command)[0] if command else "unknown"
             print(format_error(f"Command not found: '{command_name}'"))
+            execution_time = time.time() - start_time
+            self.audit_logger.log_command_execution(
+                command, user_prompt, -1, execution_time
+            )
             return False
         except Exception as e:
             print(format_error(f"An unexpected error occurred: {e}"))
+            execution_time = time.time() - start_time
+            self.audit_logger.log_command_execution(
+                command, user_prompt, -2, execution_time
+            )
             return False
 
     def _handle_successful_execution(self, user_prompt: str, command: str):

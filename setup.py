@@ -36,6 +36,7 @@ setup(
     entry_points={
         "console_scripts": [
             "ai-shell=ai_shell.main:main",
+            "ai-shell-audit=ai_shell_audit:main",
         ],
     },
     include_package_data=True,

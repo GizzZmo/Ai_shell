@@ -6,7 +6,7 @@ Thank you for your interest in contributing to AI Shell! This document provides 
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.9 or higher
 - Git
 - Basic understanding of command-line tools
 - Familiarity with Python and AsyncIO (for advanced contributions)

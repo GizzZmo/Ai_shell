@@ -322,22 +322,25 @@ sudo yum install python3-pip python3-venv
 2. **Test LLM provider:**
    ```python
    from ai_shell.llm import get_llm_provider
-   from ai_shell.config import get_config
+   from ai_shell.config import get_config, Config
    
+   # Point to a config with your provider set
    config = get_config()
-   provider = get_llm_provider('gemini', config)
-   print(provider.is_available())
+   provider = get_llm_provider()   # Uses the globally loaded config
+   response, _ = provider.generate_response("list files", "translator")
+   print(response)
    ```
 
 3. **Test command execution:**
    ```python
-   from ai_shell.executor import get_executor
-   from ai_shell.config import get_config
+   from ai_shell.executor import get_executor, SecurityChecker
    
-   config = get_config()
-   executor = get_executor(config)
-   result = executor.validate_command('ls -la')
-   print(result)
+   checker = SecurityChecker()
+   is_valid, warning = checker.validate_command('ls -la')
+   print(is_valid, warning)   # True, None
+   
+   is_valid, warning = checker.validate_command('rm -rf /')
+   print(is_valid, warning)   # False, "This command is potentially dangerous..."
    ```
 
 ### Network Debugging
@@ -368,7 +371,7 @@ sudo yum install python3-pip python3-venv
 ### System Requirements
 
 **Minimum:**
-- Python 3.8+
+- Python 3.9+
 - 4GB RAM
 - 1GB free disk space
 

@@ -8,16 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Comprehensive documentation rewrite
-- Enhanced CONTRIBUTING.md with detailed development guidelines
-- CHANGELOG.md for tracking version history
+- Wapiti Assistant mode: AI-guided web application security scanning via PTY session
+- Comprehensive documentation update across all docs/ files and README
 
 ### Changed
-- README.md completely restructured for better user experience
-- Improved documentation organization and clarity
-
-### Security
-- Documentation of security features and best practices
+- README.md: Fixed broken Metasploit mode code example; added Wapiti mode section;
+  removed garbled trailing content; updated project structure listing
+- docs/EXAMPLES.md: Complete rewrite — previous content was scrambled;
+  now provides clean, accurate examples for all four modes
+- docs/USAGE.md: Removed reference to non-existent `security.safe_commands` config key
+- docs/ARCHITECTURE.md: Corrected `LLMProvider` class interface (not ABC);
+  fixed `get_llm_provider()` signature; corrected `CommandExecutor` class layout
+- docs/CONFIGURATION.md: Removed aspirational/unimplemented features
+  (`!ENV` YAML syntax, `--validate-config`, `--profile`, debug/ui config sections);
+  replaced with accurate descriptions of implemented behaviour
+- docs/TROUBLESHOOTING.md: Fixed incorrect `get_llm_provider()` and `get_executor()`
+  call signatures in debug examples; updated minimum Python version to 3.9
+- CONTRIBUTING.md: Updated minimum Python requirement from 3.8 to 3.9
 
 ## [0.1.0] - Current Release
 

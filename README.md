@@ -36,27 +36,27 @@
 
 ## Overview
 
-AI Shell is an intelligent, multi-modal command-line assistant that bridges the gap between natural language and complex shell operations. Powered by Large Language Models (LLMs), it translates your requests into executable commands, provides conversational guidance, and integrates with specialized tools like the Metasploit Framework.
+AI Shell is an intelligent, multi-modal command-line assistant that bridges the gap between natural language and complex shell operations. Powered by Large Language Models (LLMs), it translates your requests into executable commands, provides conversational guidance, and integrates with specialized tools like the Metasploit Framework and Wapiti.
 
 Whether you're a beginner learning the command line or a seasoned expert looking to accelerate your workflow, AI Shell adapts to your needs.
 
 ## ✨ Key Features
 
-- **🔄 Multi-Modal Architecture**: Three distinct operating modes for different use cases
+- **🔄 Multi-Modal Architecture**: Four distinct operating modes for different use cases
 - **🧠 Advanced LLM Integration**: Support for both cloud (Gemini) and local (Ollama) models
 - **🔒 Security-First Design**: Built-in command validation and user confirmation
 - **📊 Command Audit Logging**: Comprehensive security tracking and compliance reporting
 - **🛡️ Enhanced Threat Detection**: 25+ dangerous command patterns with smart matching
 - **💬 Conversational Memory**: Context-aware responses with chat history
-- **🛠️ Tool Integration**: Native support for penetration testing workflows
-- **📈 Learning Capability**: Feedback loop for continuous improvement
+- **🛠️ Tool Integration**: Native PTY-based support for penetration testing and web scanning workflows
+- **📊 Learning Capability**: Feedback loop for continuous improvement via training data collection
 
 ## 🎯 Operating Modes
 
 ### 1. Command Translator Mode
 Transform natural language into precise shell commands.
 
-```bash
+```
 > find all files larger than 100MB in my home directory
 → find ~ -type f -size +100M
 ```
@@ -68,31 +68,43 @@ Conversational partner for complex command-line tasks with explanations and guid
 You: How can I check which processes are using the most memory?
 Assistant: On Linux, you can use the 'ps' command combined with 'sort':
 
-```bash
-ps aux --sort=-%mem | head -n 10
-```
+    ps aux --sort=-%mem | head -n 10
 
-This lists all running processes, sorts them by memory usage in descending order, and shows the top 10.
+This lists all running processes, sorts them by memory usage in descending
+order, and shows the top 10.
 ```
 
 ### 3. Metasploit Assistant Mode
-Your personal cybersecurity expert with direct msfconsole integration.
+Your personal cybersecurity expert with direct `msfconsole` integration via a pseudoterminal session. Type regular `msfconsole` commands as usual; prefix a line with `?` to ask the AI for guidance.
 
+```
+msf6 > hosts
+
+? search for Log4j exploits
 Assistant: You can search for Log4j exploits using the 'search' command:
 
-```bash
-search cve:2021-44228
-```
+    search cve:2021-44228
 
 Would you like me to run this command for you?
+```
+
+### 4. Wapiti Assistant Mode
+AI-guided web application security scanning via a Bash session with `wapiti` available. Prefix prompts with `?` to get AI-generated scan commands.
+
+```
+$ ? scan example.com for XSS vulnerabilities
+Assistant: To scan for XSS vulnerabilities, run:
+
+    wapiti -u http://example.com -m xss --scope domain
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Python 3.9+** 
+- **Python 3.9+**
 - **Metasploit Framework** (optional, for Metasploit mode)
+- **Wapiti** (optional, for Wapiti mode — `pip install wapiti3` or `sudo apt install wapiti`)
 - **Ollama** (optional, for local LLMs)
 
 ### Installation
@@ -141,7 +153,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
    ```bash
    # Install Ollama (Linux)
    curl -fsSL https://ollama.ai/install.sh | sh
-   
+
    # Pull a model
    ollama pull llama3
    ```
@@ -154,7 +166,7 @@ ai-shell
 
 # Direct modes
 ai-shell --mode translator
-ai-shell --mode assistant 
+ai-shell --mode assistant
 ai-shell --mode metasploit
 ai-shell --mode wapiti
 
@@ -164,7 +176,6 @@ ai-shell --provider gemini --api-key your_key
 
 # Use custom config
 ai-shell --config myconfig.yaml
-
 
 # Adjust safety and logging
 ai-shell --no-confirmation
@@ -176,28 +187,32 @@ For a full CLI reference and mode-by-mode walkthrough, see [docs/USAGE.md](docs/
 ## 📖 Documentation
 
 Browse focused guides:
-- [Usage Guide](docs/USAGE.md) — CLI flags, modes, and provider selection  
-- [Configuration Guide](docs/CONFIGURATION.md) — config structure, profiles, and templates  
-- [Architecture Overview](docs/ARCHITECTURE.md) — component and data-flow diagrams  
-- [Examples & Tutorials](docs/EXAMPLES.md) — practical prompts and scripts  
-- [Troubleshooting](docs/TROUBLESHOOTING.md) — common fixes and debugging tips  
+- [Usage Guide](docs/USAGE.md) — CLI flags, modes, and provider selection
+- [Configuration Guide](docs/CONFIGURATION.md) — config structure, profiles, and templates
+- [Architecture Overview](docs/ARCHITECTURE.md) — component and data-flow diagrams
+- [Examples & Tutorials](docs/EXAMPLES.md) — practical prompts and scripts
+- [Troubleshooting](docs/TROUBLESHOOTING.md) — common fixes and debugging tips
 
 ## 🔧 Development
 
 ### Project Structure
 
 ```
-ai_shell/
+Ai_shell/
 ├── ai_shell/           # Main package
-│   ├── main.py         # Application entry point
-│   ├── config.py       # Configuration management
-│   ├── llm.py          # LLM integration
-│   ├── executor.py     # Command execution and security
-│   └── ui.py           # User interface utilities
+│   ├── __init__.py     # Package metadata and version
+│   ├── main.py         # Application entry point and mode loops
+│   ├── config.py       # Configuration management (YAML + env vars)
+│   ├── llm.py          # LLM provider integrations and system prompts
+│   ├── executor.py     # Command execution, security, and training logger
+│   └── ui.py           # Terminal colors and formatting utilities
 ├── tests/              # Test suite
-├── docs/               # Documentation guides
+├── docs/               # Focused documentation guides
+├── config.yaml.example # Example configuration file
+├── install.sh          # Linux/Mac installer
+├── install.ps1         # Windows installer
 ├── setup.py            # Package setup
-└── requirements.txt    # Dependencies
+└── requirements.txt    # Runtime dependencies
 ```
 
 ### Testing
@@ -225,10 +240,13 @@ flake8 ai_shell/ tests/
 
 ## 🔒 Security
 
-- **API Keys**: Store securely using environment variables
-- **Command Review**: Always review before execution
-- **Local LLMs**: Consider for sensitive environments
-- **Network Security**: Be cautious with cloud providers
+- **API Keys**: Store securely using environment variables; never commit them to source control
+- **Command Review**: Always review AI-generated commands before execution
+- **Confirmation Prompts**: Enabled by default; use `--no-confirmation` only in trusted environments
+- **Dangerous Command Blocking**: Configurable list of patterns blocked before execution
+- **Local LLMs**: Consider Ollama for sensitive or air-gapped environments
+
+See [SECURITY.md](SECURITY.md) for the full security policy and responsible disclosure process.
 
 ## 🔄 CI/CD & Workflow System
 
@@ -253,14 +271,11 @@ AI Shell uses a comprehensive GitHub Actions workflow system to ensure code qual
 #### **Documentation**
 - 📖 **Markdown Validation**: Ensures all documentation is syntactically correct
 - 📖 **Link Checking**: Validates internal and external links
-- 📖 **Code Example Testing**: Verifies Python code examples in documentation
 - 📖 **Automated Deployment**: Builds and deploys docs to GitHub Pages with MkDocs
-- 📖 **Material Theme**: Beautiful, searchable documentation site
 
 #### **Performance Monitoring**
 - ⚡ **Benchmark Tests**: Measures performance of core components
 - ⚡ **Memory Profiling**: Tracks memory usage and detects leaks
-- ⚡ **Response Time Monitoring**: Ensures operations meet performance targets
 - ⚡ **Weekly Runs**: Regular performance regression testing
 
 #### **Release Automation**
@@ -272,7 +287,6 @@ AI Shell uses a comprehensive GitHub Actions workflow system to ensure code qual
 #### **Smart Automation**
 - 🏷️ **Auto-labeling**: Automatically labels issues and PRs based on content
 - 🏷️ **Size Detection**: Labels PRs by change size (XS, S, M, L, XL)
-- 🏷️ **Component Detection**: Labels based on changed files and components
 - 📊 **Status Dashboard**: Daily workflow status reports and repository statistics
 
 ### 📊 Workflow Status
@@ -294,9 +308,6 @@ black --check ai_shell/ tests/
 # Run security checks
 pip install safety
 safety check
-
-# Run performance benchmarks
-python -m pytest tests/benchmarks/ --benchmark-only
 ```
 
 ## 🤝 Contributing
@@ -306,19 +317,20 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ### Quick Steps
 
 1. Fork the repository
-2. Create a feature branch
+2. Create a feature branch (`git checkout -b feature/your-feature`)
 3. Make your changes with tests
 4. Submit a pull request
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
 - **Google Gemini** for powerful language model capabilities
 - **Ollama** community for local LLM support
 - **Metasploit Framework** for penetration testing integration
+- **Wapiti** for web application security scanning
 
 ## 📞 Support
 
@@ -328,5 +340,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **⚠️ Disclaimer**: AI Shell executes system commands. Always review commands before execution and use appropriate security measures. The developers are not responsible for any damage caused by misuse of this tool.
-```bash
-You: ? search for exploits related to the log4j vulnerability

@@ -114,7 +114,8 @@ jobs:
           statusReport += `- [📋 All Workflows](${baseUrl}/actions)\n`;
           statusReport += `- [🐛 Report Issues](${baseUrl}/issues/new/choose)\n`;
           statusReport += `- [💡 Discussions](${baseUrl}/discussions)\n`;
-          statusReport += `- [📖 Documentation](${baseUrl}/blob/main/README.md)\n`;
+          const pagesUrl = `https://${context.repo.owner.toLowerCase()}.github.io/${context.repo.repo}/`;
+          statusReport += `- [📖 Documentation](${pagesUrl})\n`;
           statusReport += `- [🤝 Contributing](${baseUrl}/blob/main/CONTRIBUTING.md)\n\n`;
           
           statusReport += '---\n';

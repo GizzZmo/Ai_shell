@@ -28,7 +28,7 @@
 - [📋 All Workflows](https://github.com/GizzZmo/Ai_shell/actions)
 - [🐛 Report Issues](https://github.com/GizzZmo/Ai_shell/issues/new/choose)
 - [💡 Discussions](https://github.com/GizzZmo/Ai_shell/discussions)
-- [📖 Documentation](https://github.com/GizzZmo/Ai_shell/blob/main/README.md)
+- [📖 Documentation](https://gizzzmo.github.io/Ai_shell/)
 - [🤝 Contributing](https://github.com/GizzZmo/Ai_shell/blob/main/CONTRIBUTING.md)
 
 ---

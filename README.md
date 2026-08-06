@@ -1,5 +1,5 @@
 # AI Shell 🤖
-
+Sm9uQXJ2ZU92ZXNlbg==
 <div align="center">
 
 **Your Intelligent Command-Line Copilot**

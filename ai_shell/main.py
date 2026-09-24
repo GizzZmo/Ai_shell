@@ -37,7 +37,6 @@ import getpass
 import logging
 import os
 import pty
-import select
 import subprocess
 import sys
 from typing import Optional

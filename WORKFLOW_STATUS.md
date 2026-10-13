@@ -1,13 +1,13 @@
 # 🚀 AI Shell - Workflow Status Dashboard
 
-*Last updated: 2026-10-05T16:29:52.951Z*
+*Last updated: 2026-10-13T15:20:03.852Z*
 
 | Workflow | Status | Last Run | Duration | Branch |
 |----------|--------|----------|----------|--------|
 | CI | ✅ success | 9/24/2026 | 2m | main |
-| Security | ✅ success | 10/5/2026 | 2m | main |
+| Security | ❌ failure | 10/13/2026 | 0m | main |
 | Documentation | ✅ success | 8/3/2026 | 5m | main |
-| Performance | ✅ success | 10/5/2026 | 0m | main |
+| Performance | ❌ failure | 10/12/2026 | 0m | main |
 | Release | ❓ No runs | N/A | N/A | N/A |
 | deployment-assets | ✅ success | 9/24/2026 | 0m | main |
 
